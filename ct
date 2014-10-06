@@ -1,0 +1,126 @@
+#!/bin/bash
+# Copyright 2014 Code-Troopers
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# Github Project : https://github.com/code-troopers/ct 
+#
+# Original algorithm come from 
+# http://superuser.com/questions/412284/pop-current-directory-until-specific-file-is-found
+
+red='\x1B[0;31m';
+green='\x1B[0;32m';
+yellow='\x1B[0;33m';
+NC='\x1B[0m'; # No Color
+blueBold='\x1B[1;34m';
+
+# Current call directory, loop var
+curr=`pwd`
+# Base call directory, to cd to it when the script ends
+callDir=$curr
+# Marker file for finding the project in the file hierarchy
+file_name=.ctproject
+
+banner(){
+if [ -z "$CTNOBANNER" ]; then
+echo '
+````````````````````````````````````````````````````````````````````````````````````````````````````
+`````````````````-/ossyyyyyyyso+:.``````````````````````````````````````````````````````````````````
+``````````````-sddddddddddddddddddh+.```````````````````````````````````````````````````````````````
+````````````.sdddo///////////////yddd+``````````````````````````````````````````````````````````````
+```````````.hdddd-               +ddddo```````````````      Code-Troopers alias tool   `````````````
+```````````sdds..                `..ddd/``````````````         Copyright  2014         `````````````
+``````````:dhho                     yhdh.`````````````          Code-Troopers          `````````````
+``````````yd                          :d+`````````````     http://code-troopers.com    `````````````
+`````````:dd  -yhyyyyyyh` -yyyyyyyyy  :dd.``````````````````````````````````````````````````````````
+`````````ydd  -dddddy///  .///dddddd  :dd+``````````````````````````````````````````````````````````
+````````-ddd  -dddddo         dddddd  :ddh``````````````````````````````````````````````````````````
+````````/ddd  `.....`         ......  :ddd.`````````````````````````````````````````````````````````
+````````ohhy                          :hhh:`````````````````````````````````````````````````````````
+```````+o                                 h:````````````````````````````````````````````````````````
+`````.ydo               yh+               hd+```````````````````````````````````````````````````````
+`````sddo      `````````yho`````````      hdd/``````````````````````````````````````````````````````
+`````sddo     -ddddddddd` :ddddddddd      hdd/``````````````````````````````````````````````````````
+`````.ydo     `.........  `.........      hd+```````````````````````````````````````````````````````
+```````/o...                          `...s-````````````````````````````````````````````````````````
+````````.ydd                          :ddo``````````````````````````````````````````````````````````
+`````````-dd            sy+           :dh```````````````````````````````````````````````````````````
+``````````/d````````````dds```````````/h-```````````````````````````````````````````````````````````
+```````````.ohdddddddddddddddddddddddy+.````````````````````````````````````````````````````````````
+``````````````.://++//:-``.-://++//-.```````````````````````````````````````````````````````````````
+````````````````````````````````````````````````````````````````````````````````````````````````````
+';
+fi
+}
+
+
+error(){
+ echo -e ${red}$@
+}
+
+log(){
+ if [ "true" == "$CTDEBUG" ]; then
+	echo -e $@${NC}
+ fi
+}
+
+help(){
+ echo -e "${green}Declared aliases found in $@ : ${NC}";
+ cat "$@" | grep -v "^#" | sed -r "s/([^=]*)=(.*)/*${blueBold} \1${NC} runs ${yellow}\2 ${NC}/g" | tr -d '"' 
+ echo -e ${NC};
+}
+
+
+while [ "$curr" != "/" ]; do
+  file="$curr/$file_name"
+  if [ -f "$file" ]; then
+    cd "$curr" > /dev/null;
+	source "$file"
+	banner; # we give a chance to export the ignore banner in the project file
+	ALIAS=$(cat $file | cut -d'=' -f 1 | grep "$1")
+	if [ -z "$ALIAS" ]; then 
+		case "$1" in
+			"help") 
+				help $file; 
+				exit; 
+				;;
+			*)
+				log "${red}Can't find aliased command, running bare command";
+				cd "$callDir" > /dev/null
+				"$@";
+				;;
+		esac
+	else
+		if [ -z "$@" ]; then
+			help $file;
+		else
+			cd "$callDir" > /dev/null
+			log "${green}We will run '$@' in '$(pwd)'";
+			eval "\$$@";
+		fi
+	fi    
+    # Go back to the base directory, null out output if CDPATH exists
+    cd "$callDir" > /dev/null
+    exit
+  fi
+  curr="`dirname \"$curr\"`"
+done
+banner;
+error "I don't know where I am at, I can't find any project ($file_name) in the parent directories of your shell. ${NC}\nYou need to create a $file_name file at the root of your project with a content similar to the following.\n${yellow}Please note that your usual shell aliases are not interpolated in the commands you specify in your project file\nand that you need to quote commands if they contain spaces.${NC}";
+echo "
+$file_name example : 
+
+    run='mvn clean install jetty:run'
+    dbg='mvnDebug clean install jetty:run'
+    test='mvn test'
+"
