@@ -84,7 +84,11 @@ help(){
 while [ "$curr" != "/" ]; do
   file="$curr/$file_name"
   if [ -f "$file" ]; then
-    cd "$curr" > /dev/null;
+    	cd "$curr" > /dev/null;
+    	if [ `uname -o` = "Cygwin" ]
+	then
+		dos2unix $file 2> /dev/null;
+	fi;
 	source "$file"
 	banner; # we give a chance to export the ignore banner in the project file
 	ALIAS=$(cat $file | cut -d'=' -f 1 | grep "$1")
