@@ -8,8 +8,9 @@ Setup
 You will need a few command line tools for this project to work :
 
  * bash
- * sed
+ * sed (gnu-sed for Mac users `brew install gnu-sed --default-names`
  * grep
+ * dos2unix for Cygwin users
  
 Clone the current repository or raw-download the `ct` shell script. Then put it in your path (typical location is ~/bin or /usr/local/bin).
 
@@ -33,7 +34,7 @@ Use consistent aliases in your `.ctproject` files, this way, you can define glob
 
 For example, you can add an alias `alias run="ct run"` and in each project define such a command. In your shell, a `run` will launch your project, no matter if the underlying task is a Maven or a Grunt one.
 
-Licence
+License
 --
 Copyright 2014 Code-Troopers.
 
