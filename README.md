@@ -14,6 +14,12 @@ You will need a few command line tools for this project to work :
  
 Clone the current repository or raw-download the `ct` shell script. Then put it in your path (typical location is ~/bin or /usr/local/bin).
 
+Easy install
+---
+You can install the script by running the following commands in your shell (adapting the CT_TARGET value to a directory in your PATH):
+
+     CT_TARGET=~/bin;mkdir $CT_TARGET; wget -O $CT_TARGET/ct https://raw.githubusercontent.com/code-troopers/ct/master/ct && chmod +x $CT_TARGET/ct
+
 Configure a project
 --
 Create a `.ctproject` file at the root of your project structure, this file will contain the aliases you want to set for your current project.
