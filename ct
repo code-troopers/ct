@@ -83,7 +83,7 @@ help(){
 
 getHTTPListening() {
     LISTENING=`lsof -iTCP -sTCP:LISTEN -P -Fcn | awk '/^p[0-9]+/ {printf "\n"; printf substr($1, 2); printf " "} /^c.*/ { printf substr($1, 2); printf " "} /^n.*/ {printf substr($1,2); printf " ";}'`
-    HTTP_JSON="["
+    HTTP_JSON="[ " #keep the trailing space, it allows to output valid json even if no result is found
     while read -r listen; do
         ISHTTP=-1;
         PID=`echo $listen | cut -d' ' -f1`;
@@ -195,9 +195,14 @@ startServer() {
     rm -f /tmp/ct_ports_out
     mkfifo /tmp/ct_ports_out
     trap "rm -f /tmp/ct_ports_out" EXIT
+    # detect if we have a netcat-traditional or netcat-openbsd
+    if nc -q 2>&1 | grep -q "requires an argument";
+        then CMD_ARGS="-q 0 -l -p ${PORT_LIST}";
+        else CMD_ARGS="-l ${PORT_LIST}";
+    fi;
     while true
     do
-        cat /tmp/ct_ports_out | nc -l ${PORT_LIST} > >( # parse the netcat output, to build the answer redirected to the pipe "out".
+        cat /tmp/ct_ports_out | nc ${CMD_ARGS} > >( # parse the netcat output, to build the answer redirected to the pipe "out".
         export REQUEST=
         while read line
         do
