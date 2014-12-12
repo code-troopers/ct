@@ -13,9 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# Github Project : https://github.com/code-troopers/ct 
+# Github Project : https://github.com/code-troopers/ct
 #
-# Original algorithm come from 
+# Original algorithm come from
 # http://superuser.com/questions/412284/pop-current-directory-until-specific-file-is-found
 
 red='\x1B[0;31m';
@@ -23,6 +23,7 @@ green='\x1B[0;32m';
 yellow='\x1B[0;33m';
 NC='\x1B[0m'; # No Color
 blueBold='\x1B[1;34m';
+PORT_LIST=1500;
 
 # Current call directory, loop var
 curr=`pwd`
@@ -80,6 +81,141 @@ help(){
  echo -e ${NC};
 }
 
+getHTTPListening() {
+    LISTENING=`lsof -iTCP -sTCP:LISTEN -P -Fcn | awk '/^p[0-9]+/ {printf "\n"; printf substr($1, 2); printf " "} /^c.*/ { printf substr($1, 2); printf " "} /^n.*/ {printf substr($1,2); printf " ";}'`
+    HTTP_JSON="["
+    while read -r listen; do
+        ISHTTP=-1;
+        PID=`echo $listen | cut -d' ' -f1`;
+        COMMAND=`echo $listen | cut -d' ' -f2`;
+        PORTS=`echo $listen | cut -d' ' -f3- | awk '{gsub(/\*/, "localhost"); print;}'`;
+        for port in $PORTS; do
+            wget --timeout=1 --method=GET $port -t1 -q -O /dev/null > /dev/null;
+            ISHTTP=$?
+            if [ $ISHTTP -eq 0 ]; then
+                cwd=`lsof -p $PID -Ffn | grep fcwd -A 1 | grep ^n | awk '/^n/ { print substr($0, 2) }'`
+                HTTP_JSON="$HTTP_JSON { 'pid' : '$PID', 'address' : '$port', 'command' : '$COMMAND', 'cwd' : '$cwd' },"
+            fi;
+        done;
+    done< <(echo "$LISTENING")
+    HTTP_JSON="${HTTP_JSON%?} ]"; # removes the trailing comma
+    echo $HTTP_JSON
+}
+
+#build a basic homepage with content from CDN for CSS/JS
+getHomePage(){
+    read -d '' CONTENT <<EOF
+    <!DOCTYPE html>
+    <html>
+    <head>
+    <title>CT port list</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="http://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.2.0/css/bootstrap.min.css" rel="stylesheet" media="screen">
+    </head>
+    <body>
+    <h1 class="page-header">Listening ports <button id="refreshBtn" class="btn btn-primary pull-right">Refresh</button></h1>
+    <div class="table-responsive">
+    <table class="table table-striped">
+    <thead>
+    <tr>
+    <th>#</th>
+    <th>Working dir</th>
+    <th>Command</th>
+    <th>URI</th>
+    </tr>
+    </thead>
+    <tbody id="content">
+
+    </tbody>
+    </table>
+    </div>
+    <footer class="text-center" role="contentinfo">
+    <div class="container">
+    <p>Made with <3 From Tours, France by <a href="http://www.code-troopers.com" target="_blank">Code-Troopers</a>.</p>
+    <pre style="font-size:4px">$(banner)</pre>
+    </div>
+    </footer>
+EOF
+    read -d '' SCRIPTS <<"EOF"
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <!-- Include all compiled plugins (below), or include individual files as needed -->
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.2.0/js/bootstrap.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/spin.js/2.0.1/spin.min.js"></script>
+    <script>
+    $(document).ready(function(){
+        var $content = $("#content");
+        var spinner = new Spinner().spin();
+        var scan = function(){
+            document.body.appendChild(spinner.el);
+            $.get('/scan').then(function(data){
+                $content.empty();
+                var json = JSON.parse(data.replace(/'/g, '"'));
+                for (var i in json){
+                    $content.append("<tr>"+
+                    "<td>"+json[i].pid+"</td>"+
+                    "<td>"+json[i].cwd+"</td>"+
+                    "<td>"+json[i].command+"</td>"+
+                    "<td><a href='http://"+json[i].address+"'>"+json[i].address+"</a></td>"+
+                    "</tr>");
+                }
+                document.body.removeChild(spinner.el);
+            });
+        }
+        scan();
+        $("#refreshBtn").click(scan);
+    });
+    </script>
+    </body>
+    </html>
+EOF
+
+    echo -e "HTTP/1.1 200 OK\r"
+    echo "Content-type: text/html"
+    echo
+
+    echo "$CONTENT$SCRIPTS"
+}
+
+# respond to / request by sending a basic html file with inline javascript that calls /apps
+# respond to /scan request with the formatted list of url (with port) detected location on disk (guesstimate) and pid
+handleRequest() {
+    case "$REQUEST" in
+        "/") getHomePage
+        ;;
+        "/scan") getHTTPListening
+        ;;
+        *) echo 'Not Found';
+        ;;
+    esac
+}
+
+startServer() {
+    #http://stackoverflow.com/questions/16640054/minimal-web-server-using-netcat
+    rm -f /tmp/ct_ports_out
+    mkfifo /tmp/ct_ports_out
+    trap "rm -f /tmp/ct_ports_out" EXIT
+    while true
+    do
+        cat /tmp/ct_ports_out | nc -l ${PORT_LIST} > >( # parse the netcat output, to build the answer redirected to the pipe "out".
+        export REQUEST=
+        while read line
+        do
+            line=$(echo "$line" | tr -d '[\r\n]')
+
+            if echo "$line" | grep -qE '^GET /' # if line starts with "GET /"
+                then
+                REQUEST=$(echo "$line" | cut -d ' ' -f2) # extract the request
+            elif [ "x$line" = x ] # empty line / end of request
+                then
+                log "$REQUEST"
+                handleRequest > /tmp/ct_ports_out
+            fi
+        done
+        )
+    done
+}
+
 
 while [ "$curr" != "/" ]; do
   file="$curr/$file_name"
@@ -92,11 +228,15 @@ while [ "$curr" != "/" ]; do
 	source "$file"
 	banner; # we give a chance to export the ignore banner in the project file
 	ALIAS=$(cat $file | cut -d'=' -f 1 | grep "$1")
-	if [ -z "$ALIAS" ]; then 
+	if [ -z "$ALIAS" ]; then
 		case "$1" in
-			"help") 
-				help $file; 
-				exit; 
+            "ports")
+                echo -e "${green}Starting port listing server on localhost:${PORT_LIST} (CTRL+C to abort)${NC}"
+                startServer;
+                ;;
+			"help")
+				help $file;
+				exit;
 				;;
 			*)
 				log "${red}Can't find aliased command, running bare command";
@@ -112,7 +252,7 @@ while [ "$curr" != "/" ]; do
 			log "${green}We will run '$@' in '$(pwd)'";
 			eval "\$$@";
 		fi
-	fi    
+	fi
     # Go back to the base directory, null out output if CDPATH exists
     cd "$callDir" > /dev/null
     exit
@@ -122,7 +262,7 @@ done
 banner;
 error "I don't know where I am at, I can't find any project ($file_name) in the parent directories of your shell. ${NC}\nYou need to create a $file_name file at the root of your project with a content similar to the following.\n${yellow}Please note that your usual shell aliases are not interpolated in the commands you specify in your project file\nand that you need to quote commands if they contain spaces.${NC}";
 echo "
-$file_name example : 
+$file_name example :
 
     run='mvn clean install jetty:run'
     dbg='mvnDebug clean install jetty:run'
