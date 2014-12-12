@@ -86,9 +86,8 @@ getHTTPListening() {
     HTTP_JSON="[ " #keep the trailing space, it allows to output valid json even if no result is found
     while read -r listen; do
         ISHTTP=-1;
-        PID=`echo $listen | cut -d' ' -f1`;
-        COMMAND=`echo $listen | cut -d' ' -f2`;
-        PORTS=`echo $listen | cut -d' ' -f3- | awk '{gsub(/\*/, "localhost"); print;}'`;
+        read PID COMMAND PORTS <<< $listen
+        PORTS=${PORTS/\*/localhost}
         for port in $PORTS; do
             wget --timeout=1 --method=GET $port -t1 -q -O /dev/null > /dev/null;
             ISHTTP=$?
