@@ -216,6 +216,10 @@ startServer() {
     done
 }
 
+if [ "$1" == "ports" ]; then
+    echo -e "${green}Starting port listing server on localhost:${PORT_LIST} (CTRL+C to abort)${NC}"
+    startServer;
+fi
 
 while [ "$curr" != "/" ]; do
   file="$curr/$file_name"
@@ -229,11 +233,7 @@ while [ "$curr" != "/" ]; do
 	banner; # we give a chance to export the ignore banner in the project file
 	ALIAS=$(cat $file | cut -d'=' -f 1 | grep "$1")
 	if [ -z "$ALIAS" ]; then
-		case "$1" in
-            "ports")
-                echo -e "${green}Starting port listing server on localhost:${PORT_LIST} (CTRL+C to abort)${NC}"
-                startServer;
-                ;;
+        case "$1" in
 			"help")
 				help $file;
 				exit;
