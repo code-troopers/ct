@@ -254,7 +254,7 @@ while [ "$curr" != "/" ]; do
 		else
 			cd "$callDir" > /dev/null
 			log "${green}We will run '$@' in '$(pwd)'";
-			eval "\$$@";
+            eval "eval \"\$$@\"";
 		fi
 	fi
     # Go back to the base directory, null out output if CDPATH exists
