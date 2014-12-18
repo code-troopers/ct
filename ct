@@ -81,24 +81,38 @@ help(){
  echo -e ${NC};
 }
 
+printInformations() {
+    ISHTTP=-1;
+    read PID COMMAND PORTS <<< $1
+    PORTS=${PORTS//\*/localhost}
+    PORTS=${PORTS//localhost/127.0.0.1}
+    for port in $PORTS
+    do
+        curl -m 5 -s http://$port > /dev/null
+        ISHTTP=$?
+        ISHTTPS="false"
+        if [ "$ISHTTP" -gt "0" ]
+        then
+            curl -m 5 -s -k https://$port > /dev/null
+            ISHTTP=$?
+            ISHTTPS="true"
+        fi
+        if [ $ISHTTP -eq 0 ]
+        then
+            cwd=`lsof -p $PID -Ffn | grep fcwd -A 1 | grep ^n | awk '/^n/ { print substr($0, 2) }'`
+            echo " { 'pid' : '$PID', 'address' : '$port', 'command' : '$COMMAND', 'cwd' : '$cwd', 'secure': $ISHTTPS},"
+        fi;
+    done
+}
+
 getHTTPListening() {
     LISTENING=`lsof -iTCP -sTCP:LISTEN -P -Fcn | awk '/^p[0-9]+/ {printf "\n"; printf substr($1, 2); printf " "} /^c.*/ { printf substr($1, 2); printf " "} /^n.*/ {printf substr($1,2); printf " ";}'`
-    HTTP_JSON="[ " #keep the trailing space, it allows to output valid json even if no result is found
-    while read -r listen; do
-        ISHTTP=-1;
-        read PID COMMAND PORTS <<< $listen
-        PORTS=${PORTS//\*/localhost}
-        for port in $PORTS; do
-            wget --timeout=1 --method=GET $port -t1 -q -O /dev/null > /dev/null;
-            ISHTTP=$?
-            if [ $ISHTTP -eq 0 ]; then
-                cwd=`lsof -p $PID -Ffn | grep fcwd -A 1 | grep ^n | awk '/^n/ { print substr($0, 2) }'`
-                HTTP_JSON="$HTTP_JSON { 'pid' : '$PID', 'address' : '$port', 'command' : '$COMMAND', 'cwd' : '$cwd' },"
-            fi;
-        done;
+    echo "["
+    while read -r row; do
+        printInformations "$row" &
     done< <(echo "$LISTENING")
-    HTTP_JSON="${HTTP_JSON%?} ]"; # removes the trailing comma
-    echo $HTTP_JSON
+    wait
+    echo "null]"
 }
 
 #build a basic homepage with content from CDN for CSS/JS
@@ -151,11 +165,12 @@ EOF
                 $content.empty();
                 var json = JSON.parse(data.replace(/'/g, '"'));
                 for (var i in json){
+                    if (null === json[i]) continue;
                     $content.append("<tr>"+
                     "<td>"+json[i].pid+"</td>"+
                     "<td>"+json[i].cwd+"</td>"+
                     "<td>"+json[i].command+"</td>"+
-                    "<td><a href='http://"+json[i].address+"'>"+json[i].address+"</a></td>"+
+                    "<td><a href='http"+(json[i].secure?"s":"")+"://"+json[i].address+"'>"+json[i].address+"</a></td>"+
                     "</tr>");
                 }
                 document.body.removeChild(spinner.el);

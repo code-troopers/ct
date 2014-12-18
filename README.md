@@ -18,7 +18,6 @@ You will need a few command line tools for this project to work :
 If you want to use the port list feature, you will also need :
 
  * lsof
- * wget
  * awk
  * netcat (nc)
 
