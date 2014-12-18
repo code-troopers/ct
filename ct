@@ -221,7 +221,7 @@ startServer() {
 }
 
 if [ "$1" == "ports" ]; then
-    echo -e "${green}Starting port listing server on localhost:${PORT_LIST} (CTRL+C to abort)${NC}"
+    echo -e "${green}Starting port listing server on http://localhost:${PORT_LIST} (CTRL+C to abort)${NC}"
     startServer;
 fi
 
