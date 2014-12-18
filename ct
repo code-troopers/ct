@@ -87,7 +87,7 @@ getHTTPListening() {
     while read -r listen; do
         ISHTTP=-1;
         read PID COMMAND PORTS <<< $listen
-        PORTS=${PORTS/\*/localhost}
+        PORTS=${PORTS//\*/localhost}
         for port in $PORTS; do
             wget --timeout=1 --method=GET $port -t1 -q -O /dev/null > /dev/null;
             ISHTTP=$?
