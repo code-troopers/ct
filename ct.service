@@ -1,0 +1,10 @@
+[Unit]
+Description=ct daemon
+After=syslog.target network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/ct ports
+
+[Install]
+WantedBy=multi-user.target
