@@ -1,0 +1,3 @@
+ct usr/bin
+ct.config etc/ct
+ct-daemon-functions.sh usr/share/ct
