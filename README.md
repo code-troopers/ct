@@ -32,6 +32,16 @@ You can install the script by running the following commands in your shell (adap
 
      CT_TARGET=~/bin;mkdir $CT_TARGET; wget -O $CT_TARGET/ct https://raw.githubusercontent.com/code-troopers/ct/master/ct && chmod +x $CT_TARGET/ct
 
+Package install
+---
+If you use a debian based linux distribution, you can use the package. You may download a package when the first release is out.
+
+Meanwhile, you can build the package yourself. Just run 
+
+     debuild
+
+The package will install a service if you have systemd, so you won't have to run `ct ports` (see below) just go to http://localhost:1500.
+
 Port list usage
 ===
 Simply run the command `ct ports` to get the list of listening ports on your machine at http://localhost:1500.
