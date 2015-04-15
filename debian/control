@@ -1,0 +1,15 @@
+Source: ct
+Section: unknown
+Priority: optional
+Maintainer: Matthieu Bollot <m.bollot@code-troopers.com>
+Build-Depends: debhelper (>= 9), dh-systemd
+Standards-Version: 3.9.5
+Homepage: https://github.com/code-troopers/ct
+
+Package: ct
+Architecture: all
+Depends: ${misc:Depends}
+Description: CLI helper Tool: command line project manager
+This tool is a simple wrapper allowing to :
+- have aliases per project, aliases that can be called from whenever the project structure.
+- spawn a web GUI to get listening ports on your machine (http://localhost:1500)
