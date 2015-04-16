@@ -10,6 +10,3 @@ Package: ct
 Architecture: all
 Depends: ${misc:Depends}
 Description: CLI helper Tool: command line project manager
-This tool is a simple wrapper allowing to :
-- have aliases per project, aliases that can be called from whenever the project structure.
-- spawn a web GUI to get listening ports on your machine (http://localhost:1500)
