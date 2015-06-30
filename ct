@@ -166,11 +166,12 @@ EOF
                 var json = JSON.parse(data.replace(/'/g, '"'));
                 for (var i in json){
                     if (null === json[i]) continue;
+                    var relativeAddr = json[i].address.replace('127\.0\.0\.1', window.location.hostname);
                     $content.append("<tr>"+
                     "<td>"+json[i].pid+"</td>"+
                     "<td>"+json[i].cwd+"</td>"+
                     "<td>"+json[i].command+"</td>"+
-                    "<td><a href='http"+(json[i].secure?"s":"")+"://"+json[i].address+"'>"+json[i].address+"</a></td>"+
+                    "<td><a href='http"+(json[i].secure?"s":"")+"://"+relativeAddr+"'>"+relativeAddr+"</a></td>"+
                     "</tr>");
                 }
                 document.body.removeChild(spinner.el);
