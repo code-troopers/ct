@@ -226,7 +226,7 @@ file_name=.ctproject
 
 banner(){
 if [ -z "$CTNOBANNER" ]; then
-    echo $BANNER
+    echo "$BANNER"
 fi
 }
 
