@@ -38,9 +38,11 @@ If you use a debian based linux distribution, you can use the package. You may d
 
 Meanwhile, you can build the package yourself. Just run 
 
-     debuild
+     git clone && ct_0.1.orig.tar.gz ct
+     sudo apt install dh-autoreconf dh-systemd debhelper devscripts
+     cd ct && debuild
 
-The package will install a service if you have systemd, so you won't have to run `ct ports` (see below) just go to http://localhost:1500.
+The package will install a service (you need systemd), so you won't have to run `ct ports` (see below) just go to http://localhost:1500.
 
 Port list usage
 ===
