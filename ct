@@ -201,9 +201,9 @@ extractFromReadme() {
     result=$(awk "/# $1/{copy=1;next} /#/{copy=0;next} copy" README.md )
     if [ -z "$result" ]
     then
-        echo "no man found"
+        echo -e "\t${red}no man found"
     else
-        echo "$result"
+        echo "${result}"
     fi
 }
 
