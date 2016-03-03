@@ -71,11 +71,16 @@ error(){
 
 log(){
  if [ "true" == "$CTDEBUG" ]; then
-	echo -e $@${NC}
+    echo -e $@${NC}
  fi
 }
 
 help(){
+ echo -e "${green}Default commands : ${NC}";
+ echo -e "\t*${blueBold} ports ${NC} runs ${yellow}a server on http://localhost:1500 to see other used ports ${NC}"
+ echo -e "\t*${blueBold} man {name} ${NC} runs ${yellow} awk on README.md to extract {name} section ${NC}"
+ echo -e ""
+
  echo -e "${green}Declared aliases found in $@ : ${NC}";
  echo -en $(cat "$@" | grep -v "^#" | sed -r "s/([^=]*)=(.*)/\\\t*\\${blueBold} \1\\${NC} runs \\${yellow}\2 \\${NC}\\\n/g" | tr -d '"' )
  echo -e ${NC};
@@ -192,6 +197,16 @@ EOF
     echo "$CONTENT$SCRIPTS"
 }
 
+extractFromReadme() {
+    result=$(awk "{IGNORECASE=1} /# $1/{copy=1;next} /#/{copy=0;next} copy" README.md )
+    if [ -z "$result" ]
+    then
+        echo -e "\t${red}no man found"
+    else
+        echo "${result}"
+    fi
+}
+
 # respond to / request by sending a basic html file with inline javascript that calls /apps
 # respond to /scan request with the formatted list of url (with port) detected location on disk (guesstimate) and pid
 handleRequest() {
@@ -236,43 +251,56 @@ startServer() {
     done
 }
 
-if [ "$1" == "ports" ]; then
+launchports () {
     echo -e "${green}Starting port listing server on http://localhost:${PORT_LIST} (CTRL+C to abort)${NC}"
     startServer;
-fi
+}
 
 while [ "$curr" != "/" ]; do
   file="$curr/$file_name"
   if [ -f "$file" ]; then
-    	cd "$curr" > /dev/null;
-    	if [ `uname -o` = "Cygwin" ]
-	then
-		dos2unix $file 2> /dev/null;
-	fi;
-	source "$file"
-	banner; # we give a chance to export the ignore banner in the project file
-	ALIAS=$(cat $file | cut -d'=' -f 1 | grep "$1")
-	if [ -z "$ALIAS" ]; then
+        cd "$curr" > /dev/null;
+        if [ `uname -o` = "Cygwin" ]
+    then
+        dos2unix $file 2> /dev/null;
+    fi;
+    source "$file"
+    banner; # we give a chance to export the ignore banner in the project file
+    ALIAS=$(cat $file | cut -d'=' -f 1 | grep "$1")
+    if [ -z "$ALIAS" ]; then
         case "$1" in
-			"help")
-				help $file;
-				exit;
-				;;
-			*)
-				log "${red}Can't find aliased command, running bare command";
-				cd "$callDir" > /dev/null
-				"$@";
-				;;
-		esac
-	else
-		if [ -z "$@" ]; then
-			help $file;
-		else
-			cd "$callDir" > /dev/null
-			log "${green}We will run '$@' in '$(pwd)'";
+            "help")
+                help $file;
+                exit;
+                ;;
+            "ports")
+                launchports;
+                exit;
+                ;;
+            "links")
+                $0 man Links;
+                exit;
+                ;;
+            "man")
+                shift
+                extractFromReadme $1;
+                exit;
+                ;;
+            *)
+                log "${red}Can't find aliased command, running bare command";
+                cd "$callDir" > /dev/null
+                "$@";
+                ;;
+        esac
+    else
+        if [ -z "$@" ]; then
+            help $file;
+        else
+            cd "$callDir" > /dev/null
+            log "${green}We will run '$@' in '$(pwd)'";
             eval "eval \"\$$@\"";
-		fi
-	fi
+        fi
+    fi
     # Go back to the base directory, null out output if CDPATH exists
     cd "$callDir" > /dev/null
     exit
