@@ -198,7 +198,13 @@ EOF
 }
 
 extractFromReadme() {
-    awk "/# $1/{copy=1;next} /#/{copy=0;next} copy" README.md 
+    result=$(awk "/# $1/{copy=1;next} /#/{copy=0;next} copy" README.md )
+    if [ -z "$result" ]
+    then
+        echo "no man found"
+    else
+        echo "$result"
+    fi
 }
 
 # respond to / request by sending a basic html file with inline javascript that calls /apps
