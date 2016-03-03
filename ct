@@ -198,7 +198,7 @@ EOF
 }
 
 extractFromReadme() {
-    result=$(awk "/# $1/{copy=1;next} /#/{copy=0;next} copy" README.md )
+    result=$(awk "{IGNORECASE=1} /# $1/{copy=1;next} /#/{copy=0;next} copy" README.md )
     if [ -z "$result" ]
     then
         echo -e "\t${red}no man found"
