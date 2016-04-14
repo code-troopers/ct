@@ -82,7 +82,7 @@ help(){
  echo -e ""
 
  echo -e "${green}Declared aliases found in $@ : ${NC}";
- echo -en $(cat "$@" | grep -v "^#" | sed -r "s/([^=]*)=(.*)/\\\t*\\${blueBold} \1\\${NC} runs \\${yellow}\2 \\${NC}\\\n/g" | tr -d '"' )
+ echo -en $(cat "$@" | grep -v "^#" | grep -v "^export" | grep -v 'CTNOBANNER' | sed -r "s/([^=]*)=([^#]*)#?(.*)/\\\t*\\${blueBold} \1\\${NC} runs \\${yellow}\2 \\${NC} \\${red} \3 \\${NC}\\\n/g" | tr -d '"' )
  echo -e ${NC};
 }
 
