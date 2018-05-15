@@ -6,6 +6,9 @@ use std::io::prelude::*;
 use std::process::*;
 
 extern crate regex;
+extern crate ct;
+
+use ct::cli::Config;
 
 use regex::Regex;
 
@@ -48,18 +51,5 @@ fn main() {
         //result printed to stdout / stderr as expected as io are shared
         let _output = s.wait_with_output();
         // println!(">> {:?}", output.unwrap().stdout);
-
-    }
-
-}
-
-struct Config{
-    command: String,
-    args: Vec<String>,
-}
-impl Config{
-    fn new(args: Vec<String>) -> Config{
-        let (query, rest_args) = args.split_at(2);
-        Config { command: query[1].to_owned(), args: rest_args.to_vec() }
     }
 }
