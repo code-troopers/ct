@@ -11,12 +11,11 @@ pub struct CTFile{
 }
 
 impl CTFile{
-    pub fn get_content() -> CTFile{
+    pub fn get_content() -> Result<CTFile, String>{
         CTFile::find_ctproject()
-       // ct_file.read()
     }
 
-    fn find_ctproject() -> CTFile{
+    fn find_ctproject() -> Result<CTFile, String>{
         let mut current_dir = current_dir().unwrap();
         let mut file_path = current_dir.join(FILE_NAME);
         while !file_path.exists() && current_dir.pop() {
@@ -24,12 +23,12 @@ impl CTFile{
             file_path = current_dir.join(FILE_NAME);
         }
         if !file_path.exists(){
-            panic!("Could not find any project file named {} in any parent directories", FILE_NAME);
+            return Err(format!("Could not find any project file named {} in any parent directories", FILE_NAME));
         }
         let path = current_dir.to_str().unwrap().to_owned();
         let f = File::open(file_path).expect("file not found");
         let content = CTFile::read(&f);
-        CTFile { content, path , ctfile: f}
+        Ok(CTFile { content, path , ctfile: f})
     }
 
     fn read(mut ctfile: &File) -> String{
