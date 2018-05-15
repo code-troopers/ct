@@ -19,9 +19,12 @@ impl CTFile{
     fn find_ctproject() -> CTFile{
         let mut current_dir = current_dir().unwrap();
         let mut file_path = current_dir.join(FILE_NAME);
-        if !file_path.exists() && current_dir.pop(){
+        while !file_path.exists() && current_dir.pop() {
             println!("Did not find in {:?}, looking in directory {:?}", file_path, current_dir);
             file_path = current_dir.join(FILE_NAME);
+        }
+        if !file_path.exists(){
+            panic!("Could not find any project file named {} in any parent directories", FILE_NAME);
         }
         let path = current_dir.to_str().unwrap().to_owned();
         let f = File::open(file_path).expect("file not found");
