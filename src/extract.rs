@@ -3,6 +3,7 @@ extern crate regex;
 use std::process::*;
 use cli::Config;
 use self::regex::Regex;
+use file_finder::CTFile;
 
 pub struct RunCommand {
     pub command: String,
@@ -28,9 +29,10 @@ impl RunCommand{
         Err("Could not find any command".to_owned())
     }
 
-    pub fn run(&self){
+    pub fn run(&self, ct_file: &CTFile){
         let s = Command::new(&self.command)
             .args(&self.args)
+            .current_dir(ct_file.path.clone())
             .spawn().unwrap();
         //result printed to stdout / stderr as expected as io are shared
         let _output = s.wait_with_output();

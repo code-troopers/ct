@@ -11,10 +11,15 @@ fn main() {
     let app_args: Vec<String> = env::args().collect();
     let config = Config::new(app_args);
 
+    if config.command.len() == 0{
+        println!("No argument given");
+        return
+    }
+
     let ct_file = CTFile::get_content();
     let command = find_command(&config, &ct_file);
 
 
     let run_command = RunCommand::new(&command, config).unwrap();
-    run_command.run();
+    run_command.run(&ct_file);
 }
