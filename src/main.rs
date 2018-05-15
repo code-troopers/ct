@@ -6,8 +6,10 @@ use ct::cli::Config;
 use ct::extract::RunCommand;
 use ct::file_finder::CTFile;
 use ct::find_command;
+use ct::show_banner;
 
 fn main() -> Result<(), String> {
+    show_banner();
     let app_args: Vec<String> = env::args().collect();
     let config = Config::new(app_args);
 
