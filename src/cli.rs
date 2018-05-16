@@ -4,8 +4,11 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn new(args: Vec<String>) -> Config {
+    pub fn new(args: Vec<String>) -> Result<Config, ()>{
+        if args.len() == 1 { //no-args
+            return Err(())
+        }
         let (query, rest_args) = args.split_at(2);
-        Config { command: query[1].to_owned(), args: rest_args.to_vec() }
+        Ok(Config { command: query[1].to_owned(), args: rest_args.to_vec() })
     }
 }

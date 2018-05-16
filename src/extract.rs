@@ -23,7 +23,7 @@ impl RunCommand{
 //        }
 //    }
 
-    pub fn all<'a>(file_content: &'a str, config: &Config) -> HashMap<String, RunCommand>{
+    pub fn all<'a>(file_content: &'a str, config: Option<&Config>) -> HashMap<String, RunCommand>{
         let regex = Regex::new(r"([^=]*)=([^#]*)#?(.*)\n?").unwrap();
         let mut commands: HashMap<String, RunCommand> = HashMap::new();
         for capture in regex.captures_iter(file_content){
@@ -35,7 +35,9 @@ impl RunCommand{
             let (command, args) = commands_vec.split_first().unwrap();
 
             let mut args_as_vect: Vec<String> = args.iter().map(|s| s.to_string()).collect();
-            args_as_vect.append(&mut config.args.clone());
+            if config.is_some() {
+                args_as_vect.append(&mut config.unwrap().args.clone());
+            }
             args_as_vect = args_as_vect.into_iter().filter(|a| { a.len() > 0 }).collect();
 
             commands.insert(alias.to_string(), RunCommand{command: command.to_string(), args: args_as_vect, doc});;
