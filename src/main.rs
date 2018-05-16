@@ -1,6 +1,9 @@
 use std::env;
 
 extern crate ct;
+extern crate colored;
+
+use colored::*;
 
 use ct::cli::Config;
 use ct::extract::RunCommand;
@@ -14,16 +17,23 @@ fn main() -> Result<(), String> {
     let ct_file = CTFile::get_content()?;
 
     let maybe_config = Config::new(app_args);
-    return match maybe_config {
+    match maybe_config {
         Ok(config) => run(&ct_file, config),
-        Err(_) => Err(help(&ct_file))
+        Err(_) => {
+            println!("{}", help(&ct_file));
+            Ok(())
+        }
     }
+
 
 }
 
 fn help(ct_file: &CTFile) -> String{
-    let all_commands = RunCommand::all(&ct_file.content, None);
-    format!("{:?}", all_commands)
+    let mut help : Vec<String> = Vec::new();
+    for (alias, command )in RunCommand::all(&ct_file.content, None){
+        help.push(format!("{} {} {} {}", alias.blue(), command.command.green(), command.args.join(" ").green(), command.doc.red()));
+    }
+    help.join("\n")
 }
 
 fn run(ct_file: &CTFile, config: Config) -> Result<(), String>{
@@ -32,7 +42,7 @@ fn run(ct_file: &CTFile, config: Config) -> Result<(), String>{
     let command = all_commands.get(&config.command);
     match command {
         Some(run_command) => run_command.run(&ct_file),
-        None => return Err(help(&ct_file))
+        None => { println!("{}", help(&ct_file)); return Ok(()) }
     }
 
     if config.command.len() == 0{

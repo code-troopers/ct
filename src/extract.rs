@@ -65,8 +65,8 @@ mod tests{
 
     #[test]
     fn it_should_extract_single_quoted_command(){
-        let config = Config::new(vec!["ct", "command"].into_iter().map(ToString::to_string).collect());
-        let map = RunCommand::all("command='run'", &config);
+        let config = Config::new(vec!["ct", "command"].into_iter().map(ToString::to_string).collect()).unwrap();
+        let map = RunCommand::all("command='run'", Some(&config));
         let run_command = map.get("command").unwrap();
         assert_eq!(run_command.command, "run");
         assert_eq!(run_command.args.join(" "), "");
@@ -74,8 +74,8 @@ mod tests{
 
     #[test]
     fn it_should_extract_double_quoted_command(){
-        let config = Config::new(vec!["ct", "command"].into_iter().map(ToString::to_string).collect());
-        let map = RunCommand::all("command=\"run\"", &config);
+        let config = Config::new(vec!["ct", "command"].into_iter().map(ToString::to_string).collect()).unwrap();
+        let map = RunCommand::all("command=\"run\"", Some(&config));
         let run_command = map.get("command").unwrap();
         assert_eq!(run_command.command, "run");
         assert_eq!(run_command.args.join(" "), "");
@@ -83,8 +83,8 @@ mod tests{
 
     #[test]
     fn it_should_extract_not_quoted_command(){
-        let config = Config::new(vec!["ct", "command"].into_iter().map(ToString::to_string).collect());
-        let map = RunCommand::all("command=run", &config);
+        let config = Config::new(vec!["ct", "command"].into_iter().map(ToString::to_string).collect()).unwrap();
+        let map = RunCommand::all("command=run", Some(&config));
         let run_command = map.get("command").unwrap();
         assert_eq!(run_command.command, "run");
         assert_eq!(run_command.args.join(" "), "");
@@ -92,8 +92,8 @@ mod tests{
 
     #[test]
     fn it_should_append_args_to_run_command_if_no_args_in_run_command(){
-        let config = Config::new(vec!["ct", "command", "arg1", "arg2"].into_iter().map(ToString::to_string).collect());
-        let map = RunCommand::all("command=run", &config);
+        let config = Config::new(vec!["ct", "command", "arg1", "arg2"].into_iter().map(ToString::to_string).collect()).unwrap();
+        let map = RunCommand::all("command=run", Some(&config));
         let run_command = map.get("command").unwrap();
         assert_eq!(run_command.command, "run");
         assert_eq!(run_command.args.join(" "), "arg1 arg2");
@@ -101,8 +101,8 @@ mod tests{
 
     #[test]
     fn it_should_append_args_to_run_command_if_args_in_run_command(){
-        let config = Config::new(vec!["ct", "command", "arg1", "arg2"].into_iter().map(ToString::to_string).collect());
-        let map = RunCommand::all("command=run tests", &config);
+        let config = Config::new(vec!["ct", "command", "arg1", "arg2"].into_iter().map(ToString::to_string).collect()).unwrap();
+        let map = RunCommand::all("command=run tests", Some(&config));
         let run_command = map.get("command").unwrap();
         assert_eq!(run_command.command, "run");
         assert_eq!(run_command.args.join(" "), "tests arg1 arg2");
@@ -111,8 +111,8 @@ mod tests{
     #[test]
     #[should_panic]
     fn it_should_error_if_line_does_not_match_pattern(){
-        let config = Config::new(vec!["ct", "command"].into_iter().map(ToString::to_string).collect());
-        let map = RunCommand::all("command", &config);
+        let config = Config::new(vec!["ct", "command"].into_iter().map(ToString::to_string).collect()).unwrap();
+        let map = RunCommand::all("command", Some(&config));
         let _run_command = map.get("command").unwrap();
     }
 }

@@ -5,3 +5,4 @@ authors = ["Cedric Gatay <c.gatay@code-troopers.com>"]
 
 [dependencies]
 regex = "0.2"
+colored = "1.6.0"
