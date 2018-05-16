@@ -4,18 +4,33 @@ use std::process::*;
 use cli::Config;
 use self::regex::Regex;
 use file_finder::CTFile;
+use std::collections::HashMap;
 
+#[derive(Debug)]
 pub struct RunCommand {
     pub command: String,
-    pub args: Vec<String>
+    pub args: Vec<String>,
+    pub doc: String,
 }
 
 impl RunCommand{
-    pub fn new(matching_line: &str, config: Config) -> Result<RunCommand, String>{
-        let regex = Regex::new(r"^[^=]*=([^#]*)#?(.*)").unwrap();
-        for capture in regex.captures_iter(matching_line){
-            let command_with_args = &capture[1].replace("\"", "").replace("'", "");
-            let _doc = &capture[2];
+//    pub fn new<'a>(matching_line: &'a str, config: &Config) -> Result<RunCommand, String>{
+//        let all = RunCommand::all(matching_line, config);
+//        let maybe_command = all.get(matching_line);
+//        match maybe_command{
+//            Some(command) => Ok(command),
+//            None => Err("Command not found".to_string())
+//        }
+//    }
+
+    pub fn all<'a>(file_content: &'a str, config: &Config) -> HashMap<String, RunCommand>{
+        let regex = Regex::new(r"([^=]*)=([^#]*)#?(.*)\n?").unwrap();
+        let mut commands: HashMap<String, RunCommand> = HashMap::new();
+        for capture in regex.captures_iter(file_content){
+        //    println!("> {}", &capture[0]);
+            let alias = &capture[1];
+            let command_with_args = &capture[2].replace("\"", "").replace("'", "");
+            let doc = capture[3].to_string();
             let commands_vec: Vec<_> = command_with_args.split(" ").collect();
             let (command, args) = commands_vec.split_first().unwrap();
 
@@ -23,9 +38,12 @@ impl RunCommand{
             args_as_vect.append(&mut config.args.clone());
             args_as_vect = args_as_vect.into_iter().filter(|a| { a.len() > 0 }).collect();
 
-            return Ok(RunCommand{command: command.to_string(), args: args_as_vect})
+            commands.insert(alias.to_string(), RunCommand{command: command.to_string(), args: args_as_vect, doc});;
         }
-        Err("Could not find any command".to_owned())
+        //let mut map = HashMap::new();
+//        map.insert(String::from("toto"), String::from("yaaa"));
+//        map
+        commands
     }
 
     pub fn run(&self, ct_file: &CTFile){
@@ -46,7 +64,8 @@ mod tests{
     #[test]
     fn it_should_extract_single_quoted_command(){
         let config = Config::new(vec!["ct", "command"].into_iter().map(ToString::to_string).collect());
-        let run_command = RunCommand::new("command='run'", config).unwrap();
+        let map = RunCommand::all("command='run'", &config);
+        let run_command = map.get("command").unwrap();
         assert_eq!(run_command.command, "run");
         assert_eq!(run_command.args.join(" "), "");
     }
@@ -54,7 +73,8 @@ mod tests{
     #[test]
     fn it_should_extract_double_quoted_command(){
         let config = Config::new(vec!["ct", "command"].into_iter().map(ToString::to_string).collect());
-        let run_command = RunCommand::new("command=\"run\"", config).unwrap();
+        let map = RunCommand::all("command=\"run\"", &config);
+        let run_command = map.get("command").unwrap();
         assert_eq!(run_command.command, "run");
         assert_eq!(run_command.args.join(" "), "");
     }
@@ -62,7 +82,8 @@ mod tests{
     #[test]
     fn it_should_extract_not_quoted_command(){
         let config = Config::new(vec!["ct", "command"].into_iter().map(ToString::to_string).collect());
-        let run_command = RunCommand::new("command=run", config).unwrap();
+        let map = RunCommand::all("command=run", &config);
+        let run_command = map.get("command").unwrap();
         assert_eq!(run_command.command, "run");
         assert_eq!(run_command.args.join(" "), "");
     }
@@ -70,7 +91,8 @@ mod tests{
     #[test]
     fn it_should_append_args_to_run_command_if_no_args_in_run_command(){
         let config = Config::new(vec!["ct", "command", "arg1", "arg2"].into_iter().map(ToString::to_string).collect());
-        let run_command = RunCommand::new("command=run", config).unwrap();
+        let map = RunCommand::all("command=run", &config);
+        let run_command = map.get("command").unwrap();
         assert_eq!(run_command.command, "run");
         assert_eq!(run_command.args.join(" "), "arg1 arg2");
     }
@@ -78,7 +100,8 @@ mod tests{
     #[test]
     fn it_should_append_args_to_run_command_if_args_in_run_command(){
         let config = Config::new(vec!["ct", "command", "arg1", "arg2"].into_iter().map(ToString::to_string).collect());
-        let run_command = RunCommand::new("command=run tests", config).unwrap();
+        let map = RunCommand::all("command=run tests", &config);
+        let run_command = map.get("command").unwrap();
         assert_eq!(run_command.command, "run");
         assert_eq!(run_command.args.join(" "), "tests arg1 arg2");
     }
@@ -87,6 +110,7 @@ mod tests{
     #[should_panic]
     fn it_should_error_if_line_does_not_match_pattern(){
         let config = Config::new(vec!["ct", "command"].into_iter().map(ToString::to_string).collect());
-        let _run_command = RunCommand::new("command", config).unwrap();
+        let map = RunCommand::all("command", &config);
+        let _run_command = map.get("command").unwrap();
     }
 }
