@@ -38,3 +38,55 @@ impl RunCommand{
         let _output = s.wait_with_output();
     }
 }
+
+#[cfg(test)]
+mod tests{
+    use super::*;
+
+    #[test]
+    fn it_should_extract_single_quoted_command(){
+        let config = Config::new(vec!["ct", "command"].into_iter().map(ToString::to_string).collect());
+        let run_command = RunCommand::new("command='run'", config).unwrap();
+        assert_eq!(run_command.command, "run");
+        assert_eq!(run_command.args.join(" "), "");
+    }
+
+    #[test]
+    fn it_should_extract_double_quoted_command(){
+        let config = Config::new(vec!["ct", "command"].into_iter().map(ToString::to_string).collect());
+        let run_command = RunCommand::new("command=\"run\"", config).unwrap();
+        assert_eq!(run_command.command, "run");
+        assert_eq!(run_command.args.join(" "), "");
+    }
+
+    #[test]
+    fn it_should_extract_not_quoted_command(){
+        let config = Config::new(vec!["ct", "command"].into_iter().map(ToString::to_string).collect());
+        let run_command = RunCommand::new("command=run", config).unwrap();
+        assert_eq!(run_command.command, "run");
+        assert_eq!(run_command.args.join(" "), "");
+    }
+
+    #[test]
+    fn it_should_append_args_to_run_command_if_no_args_in_run_command(){
+        let config = Config::new(vec!["ct", "command", "arg1", "arg2"].into_iter().map(ToString::to_string).collect());
+        let run_command = RunCommand::new("command=run", config).unwrap();
+        assert_eq!(run_command.command, "run");
+        assert_eq!(run_command.args.join(" "), "arg1 arg2");
+    }
+
+    #[test]
+    fn it_should_append_args_to_run_command_if_args_in_run_command(){
+        let config = Config::new(vec!["ct", "command", "arg1", "arg2"].into_iter().map(ToString::to_string).collect());
+        let run_command = RunCommand::new("command=run tests", config).unwrap();
+        assert_eq!(run_command.command, "run");
+        assert_eq!(run_command.args.join(" "), "tests arg1 arg2");
+    }
+
+    #[test]
+    #[should_panic]
+    fn it_should_error_if_line_does_not_match_pattern(){
+        let config = Config::new(vec!["ct", "command"].into_iter().map(ToString::to_string).collect());
+        let _run_command = RunCommand::new("command", config).unwrap();
+    }
+}
