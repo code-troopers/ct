@@ -1,7 +1,7 @@
 use std::fs::File;
 use std::io::Read;
 use std::env::current_dir;
-static FILE_NAME: &str = ".ctproject";
+const FILE_NAME: &str = ".ctproject";
 
 
 pub struct CTFile{
