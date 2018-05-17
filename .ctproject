@@ -1,3 +1,4 @@
 run="cargo run help" #run the binary
 build="cargo build --release" #build the release binary
 help=cat .ctproject
+dummy=echo toto

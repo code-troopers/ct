@@ -14,23 +14,14 @@ pub struct RunCommand {
 }
 
 impl RunCommand{
-//    pub fn new<'a>(matching_line: &'a str, config: &Config) -> Result<RunCommand, String>{
-//        let all = RunCommand::all(matching_line, config);
-//        let maybe_command = all.get(matching_line);
-//        match maybe_command{
-//            Some(command) => Ok(command),
-//            None => Err("Command not found".to_string())
-//        }
-//    }
-
     pub fn all<'a>(file_content: &'a str, config: Option<&Config>) -> HashMap<String, RunCommand>{
-        let regex = Regex::new(r"([^=]*)=([^#]*)#?(.*)\n?").unwrap();
+        let regex = Regex::new(r"(?m)^\s*([^=]*)=([^#\n]*)(#\s*(.*)\s*)?$").unwrap();
         let mut commands: HashMap<String, RunCommand> = HashMap::new();
         for capture in regex.captures_iter(file_content){
-        //    println!("> {}", &capture[0]);
             let alias = &capture[1];
             let command_with_args = &capture[2].replace("\"", "").replace("'", "");
-            let doc = capture[3].to_string();
+
+            let doc = capture.get(4).map(|m| m.as_str()).map(ToString::to_string).unwrap_or(String::from(""));
             let commands_vec: Vec<_> = command_with_args.split(" ").collect();
             let (command, args) = commands_vec.split_first().unwrap();
 
@@ -42,9 +33,6 @@ impl RunCommand{
 
             commands.insert(alias.to_string(), RunCommand{command: command.to_string(), args: args_as_vect, doc});;
         }
-        //let mut map = HashMap::new();
-//        map.insert(String::from("toto"), String::from("yaaa"));
-//        map
         commands
     }
 
@@ -107,6 +95,44 @@ mod tests{
         assert_eq!(run_command.command, "run");
         assert_eq!(run_command.args.join(" "), "tests arg1 arg2");
     }
+
+    #[test]
+    fn it_should_match_three_commands_without_comment(){
+        let map = RunCommand::all(r"command=run tests
+        command2=run app
+        command3=push commits
+        ", None);
+        assert_eq!(map.len(), 3);
+        assert_eq!(map.contains_key("command"), true);
+        assert_eq!(map.contains_key("command2"), true);
+        assert_eq!(map.contains_key("command3"), true);
+    }
+
+    #[test]
+    fn it_should_match_command_with_leading_spaces(){
+        let map = RunCommand::all("   command=run tests", None);
+        assert_eq!(map.len(), 1);
+        assert_eq!(map.contains_key("command"), true);
+    }
+
+    #[test]
+    fn it_should_match_command_with_doc(){
+        let map = RunCommand::all("command=run tests # this run tests", None);
+        assert_eq!(map.len(), 1);
+        let run_command = map.get("command").unwrap();
+        assert_eq!(run_command.command, "run");
+        assert_eq!(run_command.args.join(""), "tests");
+        assert_eq!(run_command.doc, "this run tests");
+
+    }
+
+    #[test]
+    fn it_should_match_command_with_leading_tab(){
+        let map = RunCommand::all("\tcommand=run tests", None);
+        assert_eq!(map.len(), 1);
+        assert_eq!(map.contains_key("command"), true);
+    }
+
 
     #[test]
     #[should_panic]

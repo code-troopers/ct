@@ -19,7 +19,7 @@ pub fn find_command(config: &Config, ct_file: &CTFile) -> String{
 }
 
 pub fn show_banner(){
-    let show_banner = env::var("CT_NOBANNER").unwrap_or("false".to_string());
+    let show_banner = env::var("CTNOBANNER").unwrap_or("false".to_string());
     if show_banner == "false" {
         println!("{}", BANNER);
     }
