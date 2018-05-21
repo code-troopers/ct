@@ -3,11 +3,11 @@ extern crate serde_json;
 
 extern crate regex;
 extern crate itertools;
+
 use self::regex::Regex;
-use std::process::Command;
-use std::error::Error;
-use std::process::Output;
 use self::itertools::Itertools;
+use std::process::Command;
+use std::process::Output;
 
 
 #[derive(Serialize, Deserialize,Debug)]
@@ -15,6 +15,7 @@ pub struct CTPorts{
     pid: isize,
     name: String,
     listen: Vec<String>,
+    cwd: Option<String>,
 }
 
 impl CTPorts{
@@ -41,21 +42,52 @@ impl CTPorts{
             })
             .filter(|v| v.len() > 2 )
             .map(|vec| {
-                CTPorts { pid: vec[0].replace("p", "").parse::<isize>().unwrap_or(0),
+                let pid = vec[0].replace("p", "").parse::<isize>().unwrap_or(0);
+                CTPorts { pid: pid,
                           name: vec[1][1..].to_string(),
                           listen: vec.split_at(2).1.to_vec().iter()
                               .filter( |s| s.len() > 0)
                               .map(|s| s[1..].to_string())
                               .unique()
-                              .collect::<Vec<String>>()
+                              .collect::<Vec<String>>(),
+                          cwd: CTPorts::get_cwd_for_pid(pid),
                 }
             })
             .filter(|c| c.pid != 0)
             .collect::<Vec<CTPorts>>();
-        println!("{:?}", cleaned_chunks);
+        //println!("{:?}", cleaned_chunks);
         cleaned_chunks
     }
 
+    fn get_cwd_for_pid(pid: isize) -> Option<String>{
+        let process_info = Command::new("lsof")
+            .args(vec!["-p",&pid.to_string(),"-Ffn"])
+            .output().ok()
+            .map(|o| String::from_utf8_lossy(&o.stdout).into_owned());
+        CTPorts::read_cwd_from_lsof_output(process_info)
+    }
+
+    fn read_cwd_from_lsof_output(process_info: Option<String>) -> Option<String> {
+        match process_info {
+            Some(pi) => {
+                let process_info_chunks = pi.split("\n").collect::<Vec<&str>>();
+                let fcwd_index = process_info_chunks.iter().position(|s| s.starts_with("fcwd"));
+                match fcwd_index {
+                    Some(index) => {
+                        if process_info_chunks.len() > index {
+                            let cwd_with_leading = process_info_chunks[index + 1];
+                            if cwd_with_leading.len() > 0 {
+                                return Some(cwd_with_leading[1..].to_string())
+                            }
+                        }
+                        return None
+                    },
+                    _ => None
+                }
+            },
+            _ => None
+        }
+    }
 }
 
 
@@ -102,5 +134,22 @@ nlocalhost:9123";
         assert_eq!(5, last.listen.len());
         assert_eq!("localhost:10001", &last.listen[0]);
         assert_eq!("localhost:9123", &last.listen[4]);
+    }
+
+    #[test]
+    fn should_parse_cwd_from_lsof(){
+        let sample_output = r"p47915
+fcwd
+n/Users/cgatay/Library/Application Support/JetBrains/Toolbox/apps/IDEA-U/ch-0/181.4445.4/IntelliJ IDEA 2018.1 EAP.app/Contents/bin
+ftxt
+n/Users/cgatay/Library/Application Support/JetBrains/Toolbox/apps/IDEA-U/ch-0/181.4445.4/IntelliJ IDEA 2018.1 EAP.app/Contents/MacOS/idea
+ftxt
+n/usr/share/icu/icudt59l.dat
+ftxt
+n/Users/cgatay/Library/Application Support/JetBrains/Toolbox/apps/IDEA-U/ch-0/181.4445.4/IntelliJ IDEA 2018.1 EAP.app/Contents/jdk/Contents/Home/jre/lib/jli/libjli.dylib
+";
+        let maybe_cwd = CTPorts::read_cwd_from_lsof_output(Some(sample_output.to_string()));
+        assert!(maybe_cwd.is_some());
+        assert_eq!("/Users/cgatay/Library/Application Support/JetBrains/Toolbox/apps/IDEA-U/ch-0/181.4445.4/IntelliJ IDEA 2018.1 EAP.app/Contents/bin", maybe_cwd.unwrap())
     }
 }
