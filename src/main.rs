@@ -2,7 +2,7 @@ use std::env;
 
 extern crate ct;
 extern crate colored;
-
+extern crate serde_json;
 use colored::*;
 
 use ct::cli::Config;
@@ -10,11 +10,15 @@ use ct::extract::RunCommand;
 use ct::file_finder::CTFile;
 use ct::show_banner;
 use std::string::String;
+use ct::ports::CTPorts;
 
 fn main() -> Result<(), String> {
     show_banner();
     let app_args: Vec<String> = env::args().collect();
     let ct_file = CTFile::get_content()?;
+
+    let all_ports = serde_json::to_string(&CTPorts::all().unwrap()).unwrap();
+    println!("{}", all_ports);
 
     let maybe_config = Config::new(app_args);
     match maybe_config {

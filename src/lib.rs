@@ -1,3 +1,6 @@
+#[macro_use]
+extern crate serde_derive;
+
 use cli::Config;
 use file_finder::CTFile;
 use std::env;
@@ -7,6 +10,7 @@ pub mod cli;
 pub mod extract;
 pub mod file_finder;
 pub mod banner;
+pub mod ports;
 
 pub fn find_command(config: &Config, ct_file: &CTFile) -> String{
     println!("{}", ct_file.content);
