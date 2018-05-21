@@ -1,8 +1,14 @@
+#![feature(plugin)]
+#![plugin(rocket_codegen)]
+extern crate rocket;
+
 use std::env;
 
 extern crate ct;
 extern crate colored;
 extern crate serde_json;
+
+
 use colored::*;
 
 use ct::cli::Config;
@@ -11,14 +17,20 @@ use ct::file_finder::CTFile;
 use ct::show_banner;
 use std::string::String;
 use ct::ports::CTPorts;
+use ct::ports_html;
+use rocket::response::Content;
+use rocket::http::ContentType;
 
 fn main() -> Result<(), String> {
     show_banner();
     let app_args: Vec<String> = env::args().collect();
     let ct_file = CTFile::get_content()?;
 
-    let all_ports = serde_json::to_string(&CTPorts::all().unwrap()).unwrap();
-    println!("{}", all_ports);
+    if app_args.len() > 0 && app_args[1] == "ports" {
+        println!("Started ports web server at http://localhost:1500, CTRL+C to exit...");
+        start_rocket();
+        return Ok(())
+    }
 
     let maybe_config = Config::new(app_args);
     match maybe_config {
@@ -30,6 +42,26 @@ fn main() -> Result<(), String> {
     }
 
 
+}
+
+#[get("/scan")]
+fn scan() -> String {
+    serde_json::to_string(&CTPorts::all().unwrap()).unwrap()
+}
+
+#[get("/", format = "text/html")]
+fn home_page() -> Content<String> {
+    Content(ContentType::HTML, ports_html::INDEX.to_string())
+}
+
+fn start_rocket() {
+    let config = rocket::config::Config::build(rocket::config::Environment::Production)
+        .port(1500)
+        .finalize().expect("Could not create config");
+
+    rocket::custom(config, false)
+        .mount("/", routes![scan, home_page])
+        .launch();
 }
 
 fn help(ct_file: &CTFile) -> String{
