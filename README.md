@@ -1,13 +1,13 @@
-CT : CLI Helper tool
-==
+# CT : CLI Helper tool
+
 
 This tool is a simple wrapper allowing to :
 
  * have aliases per project, aliases that can be called from whenever the project structure.
  * spawn a web GUI to get listening ports on your machine (http://localhost:1500)
 
-Setup
-==
+# Setup
+
 You will need a few command line tools for this project to work :
 
  * bash
@@ -32,16 +32,15 @@ You can install the script by running the following commands in your shell (adap
 
      CT_TARGET=~/bin;mkdir $CT_TARGET; wget -O $CT_TARGET/ct https://raw.githubusercontent.com/code-troopers/ct/master/ct && chmod +x $CT_TARGET/ct
 
-Port list usage
-===
+# Port list usage
 Simply run the command `ct ports` to get the list of listening ports on your machine at http://localhost:1500.
 You will need a working internet connection to retreive the CSS/JS from the CDN to use it.
 But you can easily imagine other frontends calling the URI http://localhost:1500/scan which returns JSON.
 
 ![Port list example](images/listen.png)
 
-Aliaser feature usage
-===
+# Aliaser feature usage
+
 
 Configure a project
 --

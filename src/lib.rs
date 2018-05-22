@@ -14,6 +14,7 @@ pub mod cli;
 pub mod extract;
 pub mod file_finder;
 pub mod ports;
+pub mod man;
 #[macro_use]
 pub mod banner;
 #[macro_use]

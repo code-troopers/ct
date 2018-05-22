@@ -13,6 +13,7 @@ use ct::extract::RunCommand;
 use ct::file_finder::CTFile;
 use ct::show_banner;
 use ct::start_rocket;
+use ct::man::CTMan;
 use std::string::String;
 
 fn main() -> Result<(), String> {
@@ -23,6 +24,20 @@ fn main() -> Result<(), String> {
     if app_args.len() > 0 && app_args[1] == "ports" {
         println!("Started ports web server at http://localhost:1500, CTRL+C to exit...");
         start_rocket();
+        return Ok(())
+    }
+
+    if app_args.len() > 0 && app_args[1] == "man" {
+        if let Some(ct_man)= CTMan::all(&ct_file){
+            if app_args.len() > 2 {
+                if let Some(man) = ct_man.get(&app_args[2..].join(" ")) {
+                    man.print();
+                }
+            }else{
+                ct_man.values().for_each(CTMan::print);
+            }
+        }
+
         return Ok(())
     }
 

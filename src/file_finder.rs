@@ -1,6 +1,9 @@
 use std::fs::File;
 use std::io::Read;
 use std::env::current_dir;
+use std::path::PathBuf;
+use std::result::Result::Err;
+
 const FILE_NAME: &str = ".ctproject";
 
 
@@ -13,6 +16,14 @@ pub struct CTFile{
 impl CTFile{
     pub fn get_content() -> Result<CTFile, String>{
         CTFile::find_ctproject()
+    }
+
+    pub fn get_readme_content(&self) -> Result<String, String>{
+        let readme_path = PathBuf::new().join(&self.path).join("README.md");
+        if let Ok(file) = File::open(readme_path){
+            return Ok(CTFile::read(&file))
+        }
+        Err("".to_string())
     }
 
     fn find_ctproject() -> Result<CTFile, String>{
