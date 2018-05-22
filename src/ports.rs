@@ -1,11 +1,10 @@
+extern crate itertools;
+extern crate regex;
 extern crate serde;
 extern crate serde_json;
 
-extern crate regex;
-extern crate itertools;
-
-use self::regex::Regex;
 use self::itertools::Itertools;
+use self::regex::Regex;
 use std::process::Command;
 use std::process::Output;
 
@@ -68,29 +67,21 @@ impl CTPorts{
     }
 
     fn read_cwd_from_lsof_output(process_info: Option<String>) -> Option<String> {
-        match process_info {
-            Some(pi) => {
-                let process_info_chunks = pi.split("\n").collect::<Vec<&str>>();
-                let fcwd_index = process_info_chunks.iter().position(|s| s.starts_with("fcwd"));
-                match fcwd_index {
-                    Some(index) => {
-                        if process_info_chunks.len() > index {
-                            let cwd_with_leading = process_info_chunks[index + 1];
-                            if cwd_with_leading.len() > 0 {
-                                return Some(cwd_with_leading[1..].to_string())
-                            }
-                        }
-                        return None
-                    },
-                    _ => None
+        if let Some(pi) = process_info {
+            let process_info_chunks = pi.split("\n").collect::<Vec<&str>>();
+            let fcwd_index = process_info_chunks.iter().position(|s| s.starts_with("fcwd"));
+            if let Some(index) = fcwd_index {
+                if process_info_chunks.len() > index {
+                    let cwd_with_leading = process_info_chunks[index + 1];
+                    if cwd_with_leading.len() > 0 {
+                        return Some(cwd_with_leading[1..].to_string())
+                    }
                 }
-            },
-            _ => None
+            }
         }
+        return None
     }
 }
-
-
 
 
 #[cfg(test)]
