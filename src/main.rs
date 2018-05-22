@@ -21,13 +21,13 @@ fn main() -> Result<(), String> {
     let app_args: Vec<String> = env::args().collect();
     let ct_file = CTFile::get_content()?;
 
-    if app_args.len() > 0 && app_args[1] == "ports" {
+    if app_args.len() > 1 && app_args[1] == "ports" {
         println!("Started ports web server at http://localhost:1500, CTRL+C to exit...");
         start_rocket();
         return Ok(())
     }
 
-    if app_args.len() > 0 && app_args[1] == "man" {
+    if app_args.len() > 1 && app_args[1] == "man" {
         if let Some(ct_man)= CTMan::all(&ct_file){
             if app_args.len() > 2 {
                 if let Some(man) = ct_man.get(&app_args[2..].join(" ")) {
