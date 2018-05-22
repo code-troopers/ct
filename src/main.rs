@@ -1,10 +1,6 @@
-#![feature(plugin)]
-#![plugin(rocket_codegen)]
-extern crate rocket;
 
 use std::env;
 
-#[macro_use]
 extern crate ct;
 extern crate colored;
 extern crate serde_json;
@@ -16,10 +12,8 @@ use ct::cli::Config;
 use ct::extract::RunCommand;
 use ct::file_finder::CTFile;
 use ct::show_banner;
+use ct::start_rocket;
 use std::string::String;
-use ct::ports::CTPorts;
-use rocket::response::Content;
-use rocket::http::ContentType;
 
 fn main() -> Result<(), String> {
     show_banner();
@@ -40,29 +34,8 @@ fn main() -> Result<(), String> {
             Ok(())
         }
     }
-
-
 }
 
-#[get("/scan")]
-fn scan() -> String {
-    serde_json::to_string(&CTPorts::all().unwrap()).unwrap()
-}
-
-#[get("/", format = "text/html")]
-fn home_page() -> Content<String> {
-    Content(ContentType::HTML, INDEX_HTML!().to_string())
-}
-
-fn start_rocket() {
-    let config = rocket::config::Config::build(rocket::config::Environment::Production)
-        .port(1500)
-        .finalize().expect("Could not create config");
-
-    rocket::custom(config, false)
-        .mount("/", routes![scan, home_page])
-        .launch();
-}
 
 fn help(ct_file: &CTFile) -> String{
     let mut help : Vec<String> = Vec::new();
