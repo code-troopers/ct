@@ -1,10 +1,10 @@
 extern crate regex;
-
+extern crate linked_hash_map;
+use self::regex::Regex;
+use self::linked_hash_map::*;
 use std::process::*;
 use cli::Config;
-use self::regex::Regex;
 use file_finder::CTFile;
-use std::collections::HashMap;
 
 #[derive(Debug)]
 pub struct RunCommand {
@@ -14,9 +14,9 @@ pub struct RunCommand {
 }
 
 impl RunCommand{
-    pub fn all<'a>(file_content: &'a str, config: Option<&Config>) -> HashMap<String, RunCommand>{
+    pub fn all<'a>(file_content: &'a str, config: Option<&Config>) -> LinkedHashMap<String, RunCommand>{
         let regex = Regex::new(r"(?m)^\s*([^=]*)=([^#\n]*)(#\s*(.*)\s*)?$").unwrap();
-        let mut commands: HashMap<String, RunCommand> = HashMap::new();
+        let mut commands: LinkedHashMap<String, RunCommand> = LinkedHashMap::new();
         for capture in regex.captures_iter(file_content){
             let alias = &capture[1];
             let command_with_args = &capture[2].replace("\"", "").replace("'", "");
