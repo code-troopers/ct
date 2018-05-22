@@ -1,4 +1,6 @@
-pub const INDEX : &str = r##"<!DOCTYPE html>
+#[macro_export]
+macro_rules! INDEX_HTML {
+    () => ( concat!(r##"<!DOCTYPE html>
     <html>
     <head>
     <title>CT port list</title>
@@ -33,7 +35,7 @@ pub const INDEX : &str = r##"<!DOCTYPE html>
 <footer class="text-center" role="contentinfo">
 <div class="container">
 <p>Made with ❤︎ From Tours, France by <a href="http://www.code-troopers.com" target="_blank">Code-Troopers</a>.</p>
-<pre style="font-size:4px">$(banner)</pre>
+<pre style="font-size:4px">"##, BANNER!() ,r##"</pre>
 </div>
 </footer>
 <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
@@ -74,4 +76,5 @@ $("#refreshBtn").click(scan);
 </script>
 </body>
 </html>
-"##;
+"##) )
+}

@@ -1,16 +1,18 @@
 #[macro_use]
 extern crate serde_derive;
+extern crate rocket;
 
 use cli::Config;
 use file_finder::CTFile;
 use std::env;
-use banner::BANNER;
 
 pub mod cli;
 pub mod extract;
 pub mod file_finder;
+#[macro_use]
 pub mod banner;
 pub mod ports;
+#[macro_use]
 pub mod ports_html;
 
 pub fn find_command(config: &Config, ct_file: &CTFile) -> String{
@@ -26,6 +28,6 @@ pub fn find_command(config: &Config, ct_file: &CTFile) -> String{
 pub fn show_banner(){
     let show_banner = env::var("CTNOBANNER").unwrap_or("false".to_string());
     if show_banner == "false" {
-        println!("{}", BANNER);
+        println!("{}", BANNER!());
     }
 }

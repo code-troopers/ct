@@ -4,6 +4,7 @@ extern crate rocket;
 
 use std::env;
 
+#[macro_use]
 extern crate ct;
 extern crate colored;
 extern crate serde_json;
@@ -17,7 +18,6 @@ use ct::file_finder::CTFile;
 use ct::show_banner;
 use std::string::String;
 use ct::ports::CTPorts;
-use ct::ports_html;
 use rocket::response::Content;
 use rocket::http::ContentType;
 
@@ -51,7 +51,7 @@ fn scan() -> String {
 
 #[get("/", format = "text/html")]
 fn home_page() -> Content<String> {
-    Content(ContentType::HTML, ports_html::INDEX.to_string())
+    Content(ContentType::HTML, INDEX_HTML!().to_string())
 }
 
 fn start_rocket() {
