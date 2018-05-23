@@ -19,6 +19,6 @@ main() {
 }
 
 # we don't run the "test phase" when doing deploys
-if [ -z $TRAVIS_TAG ]; then
+# if [ -z $TRAVIS_TAG ]; then
     main
-fi
+# fi
