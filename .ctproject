@@ -1,4 +1,6 @@
 run="cargo run help" #run the binary
 build="cargo build --release" #build the release binary
 help=cat .ctproject
-dummy=echo toto
+dummy=echo "toto is dumb"
+ragdoll=echo 'tata is a ragdoll'
+combine=echo "toto is dumb" && echo "tata is a ragdoll" # no recursive ct invoke for this test sentence
