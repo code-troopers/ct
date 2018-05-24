@@ -19,14 +19,13 @@ use std::string::String;
 fn main() -> Result<(), String> {
     show_banner();
     let app_args: Vec<String> = env::args().collect();
-    let ct_file = CTFile::get_content()?;
-
     if app_args.len() > 1 && app_args[1] == "ports" {
-        println!("Started ports web server at http://localhost:1500, CTRL+C to exit...");
+        println!("👂 Started ports web server at http://localhost:1500, CTRL+C to exit...");
         start_rocket();
         return Ok(())
     }
-
+    //see #16, do not block people from launching port from anywhere.
+    let ct_file = CTFile::get_content()?;
     if app_args.len() > 1 && app_args[1] == "man" {
         if let Some(ct_man)= CTMan::all(&ct_file){
             if app_args.len() > 2 {
@@ -70,7 +69,7 @@ fn run(ct_file: &CTFile, config: Config) -> Result<(), String>{
     }
 
     if config.command.len() == 0{
-        return Err("No argument given !".to_string())
+        return Err("⚠️ No argument given !".to_string())
     }
 
     Ok(())
