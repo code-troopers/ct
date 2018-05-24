@@ -37,9 +37,14 @@ impl RunCommand{
     }
 
     pub fn run(&self, ct_file: &CTFile){
-        println!(">> {:?}, {:?}", &self.command, &self.args);
-        let s = Command::new(&self.command)
-            .args(&self.args)
+//        println!(">> {:?}, {:?}", &self.command, &self.args);
+        let mut sh_sub_command = Vec::new();
+        sh_sub_command.push(self.command.to_string());
+        sh_sub_command.push(String::from(" "));
+        sh_sub_command.push(self.args.join(" ")); // no need to escape "', it is properly handled
+        let s = Command::new("sh")
+            .arg("-c")
+            .arg(sh_sub_command.join(""))
             .current_dir(ct_file.path.clone())
             .spawn().unwrap();
         //result printed to stdout / stderr as expected as io are shared
