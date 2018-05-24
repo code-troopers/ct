@@ -53,8 +53,13 @@ fn main() -> Result<(), String> {
 
 fn help(ct_file: &CTFile) -> String{
     let mut help : Vec<String> = Vec::new();
+    help.push("Default commands :".green().to_string());
+    help.push(format!("\t• {} runs a server on http://localhost:1500 to see other used ports 👂", "ports".blue()));
+    help.push(format!("\t• {} provide manual from content {{name}} of README.md 📖", "man {name}".blue()));
+    help.push(String::from(""));
+    help.push(format!("Declared aliases found in {} :", ct_file.path).green().to_string());
     for (alias, command )in RunCommand::all(&ct_file.content, None){
-        help.push(format!("{} {} {} {}", alias.blue(), command.command.green(), command.args.join(" ").green(), command.doc.red()));
+        help.push(format!("\t• {} runs {} {} {}", alias.blue(), command.command.green(), command.args.join(" ").green(), command.doc.red()));
     }
     help.join("\n")
 }
