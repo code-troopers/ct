@@ -63,6 +63,7 @@ $content.append("<tr>"+
 json[i].listen
     .map((p) => p.replace("*", window.location.hostname).replace("localhost", window.location.hostname))
     .filter((value, index, self) => self.indexOf(value) === index)
+    .sort((a,b) => parseInt(a.split(":")[1], 10) > parseInt(b.split(":")[1], 10))
     .map((p) => `${p} - <a href="http://${p}" target="_blank"><i class="fa fa-globe">&nbsp;</i></a> <a href="https://${p}" target="_blank"><i class="fa fa-lock">&nbsp;</i></a>`)
     .join("<br>")
 +"</td>" +
