@@ -5,6 +5,7 @@ use self::linked_hash_map::*;
 use std::process::*;
 use cli::Config;
 use file_finder::CTFile;
+use log::debug_log;
 
 #[derive(Debug)]
 pub struct RunCommand {
@@ -37,11 +38,11 @@ impl RunCommand{
     }
 
     pub fn run(&self, ct_file: &CTFile){
-//        println!(">> {:?}, {:?}", &self.command, &self.args);
         let mut sh_sub_command = Vec::new();
         sh_sub_command.push(self.command.to_string());
         sh_sub_command.push(String::from(" "));
         sh_sub_command.push(self.args.join(" ")); // no need to escape "', it is properly handled
+        debug_log(|| format!("About to run `sh -c {:?}`", sh_sub_command.join("")));
         let s = Command::new("sh")
             .arg("-c")
             .arg(sh_sub_command.join(""))
