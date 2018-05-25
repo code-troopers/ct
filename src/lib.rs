@@ -5,6 +5,9 @@ extern crate rocket;
 
 #[macro_use]
 extern crate serde_derive;
+#[macro_use]
+extern crate lazy_static;
+
 
 use cli::Config;
 use file_finder::CTFile;
@@ -15,6 +18,7 @@ pub mod extract;
 pub mod file_finder;
 pub mod ports;
 pub mod man;
+pub mod log;
 #[macro_use]
 pub mod banner;
 #[macro_use]
