@@ -40,24 +40,24 @@ fn help(ct_file: &Option<CTFile>) -> String{
     help.push(String::from(""));
     if let Some(file) = ct_file {
         help.push(format!("Declared aliases found in {} :", file.path).green().to_string());
-        for (alias, command) in RunCommand::all(&file.content, &mut None) {
+        for (alias, command) in RunCommand::all(&file.content, &None) {
             help.push(format!("\t• {} runs {} {} {}", alias.blue(), command.command.green(), command.args.join(" ").green(), command.doc.red()));
         }
     }else{
-        help.push(format!("No .ctproject found in the current directory."));
-        help.push(format!("You can use ct --init to create a sample"));
+        help.push(format!("{}", "No .ctproject found in the current directory.".red()));
+        help.push(format!("\t{}", "🚀 You can use ct --init to create a sample 🖖".yellow()));
     }
     help.join("\n")
 }
 
-fn run(ct_file: Option<CTFile>, mut config: Option<Config>) -> Result<(), String>{
+fn run(ct_file: Option<CTFile>, config: Option<Config>) -> Result<(), String>{
     let args: Vec<App> = vec![SubCommand::with_name("man")
                                   .about("provide manual from content {{name}} of README.md 📖")
                                   .arg(Arg::with_name("name").multiple(true).help("extract content")),
                               SubCommand::with_name("ports")
                                   .about("runs a server on http://localhost:1500 to see other used ports 👂")];
     let all_commands = match ct_file {
-        Some(ref ct_file) => RunCommand::all(&ct_file.content, &mut config),
+        Some(ref ct_file) => RunCommand::all(&ct_file.content, &config),
         None => LinkedHashMap::new()
     };
     let commands_from_ctproject: Vec<App> = all_commands.iter()
@@ -68,7 +68,7 @@ fn run(ct_file: Option<CTFile>, mut config: Option<Config>) -> Result<(), String
     let help_text = help(&ct_file);
     let app = App::new("ct - CLI helper")
         .version(crate_version!())
-        .author("Code-Troopers <contact@code-troopers.com>")
+        .author(crate_authors!())
         .help(help_text.as_str())
         .about("Help you to handle your project easily")
         .arg(Arg::with_name("init").long("init").help("Initialize a new project in the current directory"))
