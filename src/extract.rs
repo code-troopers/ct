@@ -15,7 +15,7 @@ pub struct RunCommand {
 }
 
 impl RunCommand{
-    pub fn all<'a>(file_content: &'a str, config: Option<&Config>) -> LinkedHashMap<String, RunCommand>{
+    pub fn all<'a>(file_content: &'a str, config: &mut Option<Config>) -> LinkedHashMap<String, RunCommand>{
         let regex = Regex::new(r"(?m)^\s*([^=]*)=([^#\n]*)(#\s*(.*)\s*)?$").unwrap();
         let mut commands: LinkedHashMap<String, RunCommand> = LinkedHashMap::new();
         for capture in regex.captures_iter(file_content){
@@ -28,7 +28,7 @@ impl RunCommand{
 
             let mut args_as_vect: Vec<String> = args.iter().map(|s| s.to_string()).collect();
             if config.is_some() {
-                args_as_vect.append(&mut config.unwrap().args.clone());
+                args_as_vect.append(&mut config.as_ref().unwrap().args.clone());
             }
             args_as_vect = args_as_vect.into_iter().filter(|a| { a.len() > 0 }).collect();
 
@@ -60,7 +60,7 @@ mod tests{
     #[test]
     fn it_should_extract_single_quoted_command(){
         let config = Config::new(vec!["ct", "command"].into_iter().map(ToString::to_string).collect()).unwrap();
-        let map = RunCommand::all("command='run'", Some(&config));
+        let map = RunCommand::all("command='run'", &mut Some(config));
         let run_command = map.get("command").unwrap();
         assert_eq!(run_command.command, "run");
         assert_eq!(run_command.args.join(" "), "");
@@ -69,7 +69,7 @@ mod tests{
     #[test]
     fn it_should_extract_double_quoted_command(){
         let config = Config::new(vec!["ct", "command"].into_iter().map(ToString::to_string).collect()).unwrap();
-        let map = RunCommand::all("command=\"run\"", Some(&config));
+        let map = RunCommand::all("command=\"run\"", &mut Some(config));
         let run_command = map.get("command").unwrap();
         assert_eq!(run_command.command, "run");
         assert_eq!(run_command.args.join(" "), "");
@@ -78,7 +78,7 @@ mod tests{
     #[test]
     fn it_should_extract_not_quoted_command(){
         let config = Config::new(vec!["ct", "command"].into_iter().map(ToString::to_string).collect()).unwrap();
-        let map = RunCommand::all("command=run", Some(&config));
+        let map = RunCommand::all("command=run", &mut Some(config));
         let run_command = map.get("command").unwrap();
         assert_eq!(run_command.command, "run");
         assert_eq!(run_command.args.join(" "), "");
@@ -87,7 +87,7 @@ mod tests{
     #[test]
     fn it_should_append_args_to_run_command_if_no_args_in_run_command(){
         let config = Config::new(vec!["ct", "command", "arg1", "arg2"].into_iter().map(ToString::to_string).collect()).unwrap();
-        let map = RunCommand::all("command=run", Some(&config));
+        let map = RunCommand::all("command=run", &mut Some(config));
         let run_command = map.get("command").unwrap();
         assert_eq!(run_command.command, "run");
         assert_eq!(run_command.args.join(" "), "arg1 arg2");
@@ -96,7 +96,7 @@ mod tests{
     #[test]
     fn it_should_append_args_to_run_command_if_args_in_run_command(){
         let config = Config::new(vec!["ct", "command", "arg1", "arg2"].into_iter().map(ToString::to_string).collect()).unwrap();
-        let map = RunCommand::all("command=run tests", Some(&config));
+        let map = RunCommand::all("command=run tests", &mut Some(config));
         let run_command = map.get("command").unwrap();
         assert_eq!(run_command.command, "run");
         assert_eq!(run_command.args.join(" "), "tests arg1 arg2");
@@ -107,7 +107,7 @@ mod tests{
         let map = RunCommand::all(r"command=run tests
         command2=run app
         command3=push commits
-        ", None);
+        ", &mut None);
         assert_eq!(map.len(), 3);
         assert_eq!(map.contains_key("command"), true);
         assert_eq!(map.contains_key("command2"), true);
@@ -116,14 +116,14 @@ mod tests{
 
     #[test]
     fn it_should_match_command_with_leading_spaces(){
-        let map = RunCommand::all("   command=run tests", None);
+        let map = RunCommand::all("   command=run tests", &mut None);
         assert_eq!(map.len(), 1);
         assert_eq!(map.contains_key("command"), true);
     }
 
     #[test]
     fn it_should_match_command_with_doc(){
-        let map = RunCommand::all("command=run tests # this run tests", None);
+        let map = RunCommand::all("command=run tests # this run tests", &mut None);
         assert_eq!(map.len(), 1);
         let run_command = map.get("command").unwrap();
         assert_eq!(run_command.command, "run");
@@ -134,7 +134,7 @@ mod tests{
 
     #[test]
     fn it_should_match_command_with_leading_tab(){
-        let map = RunCommand::all("\tcommand=run tests", None);
+        let map = RunCommand::all("\tcommand=run tests", &mut None);
         assert_eq!(map.len(), 1);
         assert_eq!(map.contains_key("command"), true);
     }
@@ -144,7 +144,7 @@ mod tests{
     #[should_panic]
     fn it_should_error_if_line_does_not_match_pattern(){
         let config = Config::new(vec!["ct", "command"].into_iter().map(ToString::to_string).collect()).unwrap();
-        let map = RunCommand::all("command", Some(&config));
+        let map = RunCommand::all("command", &mut Some(config));
         let _run_command = map.get("command").unwrap();
     }
 }
