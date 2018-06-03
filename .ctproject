@@ -4,3 +4,5 @@ help=cat .ctproject
 dummy=echo "toto is dumb"
 ragdoll=echo 'tata is a ragdoll'
 combine=echo "toto is dumb" && echo "tata is a ragdoll" # no recursive ct invoke for this test sentence
+envvar='CTENV="azerty qsdf";echo $CTENV'
+front='cd ui; ct run' #debugging #18
