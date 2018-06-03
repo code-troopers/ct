@@ -17,10 +17,11 @@ pub struct RunCommand {
 
 impl RunCommand{
     pub fn all<'a>(file_content: &'a str, config: &Option<Config>) -> LinkedHashMap<String, RunCommand>{
-        let regex = Regex::new(r#"(?m)^\s*([^=]*)=([^#\n]*)(#\s*(.*)\s*)?$"#).unwrap();
+        let regex = Regex::new(r#"(?m)^\s*([^#=]*)=([^#\n]*)(#\s*(.*)\s*)?$"#).unwrap();
         let mut commands: LinkedHashMap<String, RunCommand> = LinkedHashMap::new();
         for capture in regex.captures_iter(file_content){
             let alias = &capture[1];
+            debug_log(|| format!(" Handling alias : {}", alias) );
             debug_log(|| format!(" Raw captured command : {}", &capture[2]) );
             let extracted_command = &capture[2].trim();
             let chars = extracted_command.chars().collect::<Vec<char>>();
