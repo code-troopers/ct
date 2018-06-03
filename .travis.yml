@@ -47,7 +47,7 @@ matrix:
 #    # Windows
 #    - env: TARGET=x86_64-pc-windows-gnu
      # Windows
-    - env: TARGET=x86_64-pc-windows-msvc
+    - env: TARGET=x86_64-pc-windows-gnu
       rust: nightly
 
     # Testing other channels
