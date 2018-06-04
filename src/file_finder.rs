@@ -3,6 +3,7 @@ use std::io::Read;
 use std::env::current_dir;
 use std::path::PathBuf;
 use std::result::Result::Err;
+use log::debug_log;
 
 const FILE_NAME: &str = ".ctproject";
 
@@ -30,7 +31,7 @@ impl CTFile{
         let mut current_dir = current_dir().unwrap();
         let mut file_path = current_dir.join(FILE_NAME);
         while !file_path.exists() && current_dir.pop() {
-            println!("Did not find in {:?}, looking in directory {:?}", file_path, current_dir);
+            debug_log(|| format!("Did not find in {:?}, looking in directory {:?}", file_path, current_dir));
             file_path = current_dir.join(FILE_NAME);
         }
         if !file_path.exists(){
@@ -47,6 +48,5 @@ impl CTFile{
         ctfile.read_to_string(&mut contents)
             .expect("something went wrong reading the file");
         contents
-        //self.line = contents.clone().lines()
     }
 }
