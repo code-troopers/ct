@@ -7,3 +7,4 @@ combine=echo "toto is dumb" && echo "tata is a ragdoll" # no recursive ct invoke
 envvar='CTENV="azerty qsdf";echo $CTENV'
 # comment on line
 front='cd ui; ct run' #debugging #18
+dual="ct help && ct help"

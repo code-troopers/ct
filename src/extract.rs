@@ -52,6 +52,7 @@ impl RunCommand{
         let sh_sub_command = self.build_subcommand();
         debug_log(|| format!("About to run `sh -c {:?}`", sh_sub_command));
         let s = Command::new("sh")
+            .env("CTNOBANNER","true")
             .arg("-c")
             .arg(sh_sub_command)
             .current_dir(ct_file.path.clone())
