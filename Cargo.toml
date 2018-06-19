@@ -15,8 +15,8 @@ serde_derive = "1.0"
 # Each data format lives in its own crate; the sample code below uses JSON
 # but you may be using a different one.
 serde_json = "1.0"
-#rocket = "0.3.13"
-#rocket_codegen = "0.3.13"
+hyper = "0.12.0"
+futures = "0.1.21"
 linked-hash-map = "0.5.1"
 lazy_static = "1.0"
 clap = "2.0.0"

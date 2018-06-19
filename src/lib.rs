@@ -1,7 +1,10 @@
 #![feature(plugin, extern_prelude)]
-extern crate colored;
+extern crate futures;
+extern crate hyper;
 #[macro_use]
 extern crate lazy_static;
+extern crate colored;
+
 #[macro_use]
 extern crate serde_derive;
 
@@ -26,6 +29,24 @@ pub mod log;
 pub mod banner;
 #[macro_use]
 pub mod ports_html;
+
+
+use futures::future;
+use hyper::rt::Future;
+use hyper::service::service_fn;
+use hyper::{Body, Method, Request, Response, Server, StatusCode, HeaderMap};
+use hyper::header::CONTENT_TYPE;
+use cli::Config;
+
+pub fn find_command(config: &Config, ct_file: &CTFile) -> String{
+    println!("{}", ct_file.content);
+    let matching_line: String = ct_file.content.lines()
+        .filter(|line| line.starts_with(&config.command))
+        .last()
+        //build a "fake" command with the one the user tries to execute
+        .map_or(format!("{}={}", &config.command, &config.command), |v| { v.to_string() });
+    matching_line
+}
 
 pub fn show_banner(){
     let show_banner = env::var("CTNOBANNER").unwrap_or("false".to_string());
@@ -62,8 +83,9 @@ pub fn init_project(){
 
 pub fn start_port_listening() {
     println!("👂 Started ports web server at http://localhost:1500, CTRL+C to exit...");
-    start_rocket();
+    start_hyper();
 }
+
 
 pub fn show_man(man_entry: Option<&str>, ct_file: Option<CTFile>) {
     if let Some(ct_file) = ct_file {
@@ -79,6 +101,46 @@ pub fn show_man(man_entry: Option<&str>, ct_file: Option<CTFile>) {
     }
 }
 
+fn scan() -> String {
+    serde_json::to_string(&CTPorts::all().unwrap()).unwrap()
+}
 
-pub fn start_rocket() {
+
+fn home_page() -> &'static str {
+    INDEX_HTML!()
+}
+
+type BoxFut = Box<Future<Item = Response<Body>, Error = hyper::Error> + Send>;
+
+fn echo(req: Request<Body>) -> BoxFut {
+    let mut response = Response::new(Body::empty());
+
+    match (req.method(), req.uri().path()) {
+        (&Method::GET, "/") => {
+            let mut map = HeaderMap::new();
+
+            map.insert(CONTENT_TYPE, "text/html;charset=utf-8".parse().unwrap());
+
+            *response.headers_mut() = map;
+            *response.body_mut() = Body::from(home_page());
+        }
+        (&Method::GET, "/scan") => {
+            *response.body_mut() = Body::from(scan());
+        }
+        _ => {
+            *response.status_mut() = StatusCode::NOT_FOUND;
+        }
+    }
+    Box::new(future::ok(response))
+}
+
+pub fn start_hyper() {
+    let addr = ([0, 0, 0, 0], 1500).into();
+
+    let server = Server::bind(&addr)
+        .serve(|| service_fn(echo))
+        .map_err(|e| eprintln!("server error: {}", e));
+
+
+    hyper::rt::run(server);
 }
