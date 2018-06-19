@@ -10,8 +10,6 @@ use colored::*;
 use file_finder::CTFile;
 use man::CTMan;
 use ports::CTPorts;
-use rocket::http::ContentType;
-use rocket::response::Content;
 use std::env;
 use std::error::Error;
 use std::fs::File;
