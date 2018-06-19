@@ -1,12 +1,9 @@
 #![feature(plugin, extern_prelude)]
-#![plugin(rocket_codegen)]
-extern crate rocket;
-
-
-#[macro_use]
-extern crate serde_derive;
+extern crate colored;
 #[macro_use]
 extern crate lazy_static;
+#[macro_use]
+extern crate serde_derive;
 
 
 use cli::Config;
@@ -24,9 +21,6 @@ pub mod banner;
 #[macro_use]
 pub mod ports_html;
 
-use rocket::response::Content;
-use rocket::http::ContentType;
-use ports::CTPorts;
 
 pub fn find_command(config: &Config, ct_file: &CTFile) -> String{
     println!("{}", ct_file.content);
@@ -46,22 +40,6 @@ pub fn show_banner(){
 }
 
 
-#[get("/scan")]
-fn scan() -> String {
-    serde_json::to_string(&CTPorts::all().unwrap()).unwrap()
-}
-
-#[get("/", format = "text/html")]
-fn home_page() -> Content<String> {
-    Content(ContentType::HTML, INDEX_HTML!().to_string())
-}
 
 pub fn start_rocket() {
-    let config = rocket::config::Config::build(rocket::config::Environment::Production)
-        .port(1500)
-        .finalize().expect("Could not create config");
-
-    rocket::custom(config, false)
-        .mount("/", routes![scan, home_page])
-        .launch();
 }
