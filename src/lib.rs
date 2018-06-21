@@ -1,9 +1,10 @@
 #![feature(plugin, extern_prelude)]
-#![plugin(rocket_codegen)]
-extern crate colored;
+extern crate futures;
+extern crate hyper;
 #[macro_use]
 extern crate lazy_static;
-extern crate rocket;
+extern crate colored;
+
 #[macro_use]
 extern crate serde_derive;
 
@@ -12,8 +13,6 @@ use colored::*;
 use file_finder::CTFile;
 use man::CTMan;
 use ports::CTPorts;
-use rocket::http::ContentType;
-use rocket::response::Content;
 use std::env;
 use std::error::Error;
 use std::fs::File;
@@ -30,6 +29,14 @@ pub mod log;
 pub mod banner;
 #[macro_use]
 pub mod ports_html;
+
+
+use futures::future;
+use hyper::rt::Future;
+use hyper::service::service_fn;
+use hyper::{Body, Method, Request, Response, Server, StatusCode, HeaderMap};
+use hyper::header::CONTENT_TYPE;
+
 
 pub fn show_banner(){
     let show_banner = env::var("CTNOBANNER").unwrap_or("false".to_string());
@@ -66,8 +73,9 @@ pub fn init_project(){
 
 pub fn start_port_listening() {
     println!("👂 Started ports web server at http://localhost:1500, CTRL+C to exit...");
-    start_rocket();
+    start_hyper();
 }
+
 
 pub fn show_man(man_entry: Option<&str>, ct_file: Option<CTFile>) {
     if let Some(ct_file) = ct_file {
@@ -83,22 +91,46 @@ pub fn show_man(man_entry: Option<&str>, ct_file: Option<CTFile>) {
     }
 }
 
-#[get("/scan")]
 fn scan() -> String {
     serde_json::to_string(&CTPorts::all().unwrap()).unwrap()
 }
 
-#[get("/", format = "text/html")]
-fn home_page() -> Content<String> {
-    Content(ContentType::HTML, INDEX_HTML!().to_string())
+
+fn home_page() -> &'static str {
+    INDEX_HTML!()
 }
 
-pub fn start_rocket() {
-    let config = rocket::config::Config::build(rocket::config::Environment::Production)
-        .port(1500)
-        .finalize().expect("Could not create config");
+type BoxFut = Box<Future<Item = Response<Body>, Error = hyper::Error> + Send>;
 
-    rocket::custom(config, false)
-        .mount("/", routes![scan, home_page])
-        .launch();
+fn echo(req: Request<Body>) -> BoxFut {
+    let mut response = Response::new(Body::empty());
+
+    match (req.method(), req.uri().path()) {
+        (&Method::GET, "/") => {
+            let mut map = HeaderMap::new();
+
+            map.insert(CONTENT_TYPE, "text/html;charset=utf-8".parse().unwrap());
+
+            *response.headers_mut() = map;
+            *response.body_mut() = Body::from(home_page());
+        }
+        (&Method::GET, "/scan") => {
+            *response.body_mut() = Body::from(scan());
+        }
+        _ => {
+            *response.status_mut() = StatusCode::NOT_FOUND;
+        }
+    }
+    Box::new(future::ok(response))
+}
+
+pub fn start_hyper() {
+    let addr = ([0, 0, 0, 0], 1500).into();
+
+    let server = Server::bind(&addr)
+        .serve(|| service_fn(echo))
+        .map_err(|e| eprintln!("server error: {}", e));
+
+
+    hyper::rt::run(server);
 }
