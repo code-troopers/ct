@@ -22,6 +22,10 @@ use ct::ports::CTPorts;
 
 fn main() -> Result<(), String> {
     show_banner();
+    if cfg!(windows) {
+        // disable colored text output on Windows as the Windows terminals do not support it yet
+        colored::control::set_override(false);
+    }
     let app_args: Vec<String> = env::args().collect();
     debug_log(|| String::from("Read ct file"));
     let ct_file = CTFile::get_content().ok();
