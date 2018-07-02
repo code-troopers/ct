@@ -51,12 +51,22 @@ impl RunCommand{
     pub fn run(&self, ct_file: &CTFile){
         let sh_sub_command = self.build_subcommand();
         debug_log(|| format!("About to run `sh -c {:?}`", sh_sub_command));
-        let s = Command::new("sh")
-            .env("CTNOBANNER","true")
-            .arg("-c")
-            .arg(sh_sub_command)
-            .current_dir(ct_file.path.clone())
-            .spawn().unwrap();
+        let s : Child;
+        if cfg!(windows) {
+            s = Command::new("cmd")
+                .arg("/C")
+                .arg(sh_sub_command)
+                .env("CTNOBANNER","true")
+                .current_dir(ct_file.path.clone())
+                .spawn().unwrap();
+        }else{
+            s = Command::new("sh")
+                .arg("-c")
+                .arg(sh_sub_command)
+                .env("CTNOBANNER","true")
+                .current_dir(ct_file.path.clone())
+                .spawn().unwrap();
+        }
         //result printed to stdout / stderr as expected as io are shared
         let _output = s.wait_with_output();
     }
