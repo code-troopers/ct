@@ -17,6 +17,7 @@ use std::env;
 use std::string::String;
 use linked_hash_map::LinkedHashMap;
 use ct::log::debug_log;
+use ct::ports::CTPorts;
 
 
 fn main() -> Result<(), String> {
@@ -33,9 +34,12 @@ fn main() -> Result<(), String> {
 
 
 fn help(ct_file: &Option<CTFile>) -> String{
+    let ports_available = CTPorts::available();
     let mut help : Vec<String> = Vec::new();
     help.push("Default commands :".green().to_string());
-    help.push(format!("\t• {} runs a server on http://localhost:1500 to see other used ports 👂", "ports".blue()));
+    if ports_available {
+        help.push(format!("\t• {} runs a server on http://localhost:1500 to see other used ports 👂", "ports".blue()));
+    }
     help.push(format!("\t• {} provide manual from content {{name}} of README.md 📖", "man {name}".blue()));
     help.push(String::from(""));
     if let Some(file) = ct_file {
