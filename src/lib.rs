@@ -81,8 +81,12 @@ pub fn start_port_listening() {
 }
 
 
-pub fn show_man(man_entry: Option<&str>, ct_file: Option<CTFile>) {
+pub fn show_man(man_entry: Option<&str>, help: bool, ct_file: Option<CTFile>) {
     if let Some(ct_file) = ct_file {
+        if help{
+            CTMan::help(&ct_file);
+            return
+        }
         if let Some(ct_man) = CTMan::all(&ct_file) {
             if man_entry.is_some() {
                 if let Some(man) = ct_man.get(man_entry.unwrap()) {
