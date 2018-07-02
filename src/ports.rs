@@ -7,6 +7,7 @@ use self::itertools::Itertools;
 use self::regex::Regex;
 use std::process::Command;
 use std::process::Output;
+use std::process::Stdio;
 
 
 #[derive(Serialize, Deserialize,Debug)]
@@ -18,6 +19,18 @@ pub struct CTPorts{
 }
 
 impl CTPorts{
+
+    //result is not cached but it should not be invoked more than once per ct call, so this is not a big deal
+    pub fn available() -> bool {
+        match Command::new("lsof")
+                      .arg("-v")
+                      .stdout(Stdio::null())
+                      .stderr(Stdio::null())
+                      .spawn(){
+            Ok(_) => true,
+            Err(_) => false
+        }
+    }
 
     pub fn all() -> Result<Vec<CTPorts>, ()>{
         let lsof_output = CTPorts::run_lsof();

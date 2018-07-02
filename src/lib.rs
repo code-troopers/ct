@@ -72,8 +72,12 @@ pub fn init_project(){
 
 
 pub fn start_port_listening() {
-    println!("👂 Started ports web server at http://localhost:1500, CTRL+C to exit...");
-    start_hyper();
+    if CTPorts::available() {
+        println!("👂 Started ports web server at http://localhost:1500, CTRL+C to exit...");
+        start_hyper();
+    }else{
+        println!("🙉 Unable to start port server, please make sure lsof is available");
+    }
 }
 
 
