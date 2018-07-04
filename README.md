@@ -1,5 +1,6 @@
-# CT : CLI Helper tool
+[![Build Status](https://travis-ci.org/code-troopers/ct.svg?branch=feat%2Frust)](https://travis-ci.org/code-troopers/ct)
 
+# CT : CLI Helper tool
 
 This tool is a simple wrapper allowing to :
 
@@ -7,30 +8,29 @@ This tool is a simple wrapper allowing to :
  * spawn a web GUI to get listening ports on your machine (http://localhost:1500)
 
 # Setup
-
-You will need a few command line tools for this project to work :
-
- * bash
- * sed (gnu-sed for Mac users `brew install gnu-sed --default-names`
- * grep
- * dos2unix for Cygwin users
-
-If you want to use the port list feature, you will also need :
-
- * lsof
- * curl
- * awk
- * netcat (nc)
+No prerequisites are required except `lsof` if you want to use port listing feature.
 
 Manual install
 ---
-Clone the current repository or raw-download the `ct` shell script. Then put it in your path (typical location is ~/bin or /usr/local/bin).
+Get the latest release of ct on the release page : https://github.com/code-troopers/ct/releases/latest for your  : 
+ 
+ * apple-darwin for MacOS hosts
+ * pc-windows-gnu for Windows hosts
+ * unknown-linux-gnu for Linux hosts (or Linux For Windows) 
+ * unknown-linux-musl for Linux hosts without glibc (typically alpine)
+ 
+Untar it and place `ct` file in your PATH (`/usr/local/bin` is a good candidate).
 
 Easy install
 ---
-You can install the script by running the following commands in your shell (adapting the CT_TARGET value to a directory in your PATH):
 
-     CT_TARGET=~/bin;mkdir $CT_TARGET; wget -O $CT_TARGET/ct https://raw.githubusercontent.com/code-troopers/ct/master/ct && chmod +x $CT_TARGET/ct
+## Mac OS
+ 
+ * brew tap && brew install tap
+ 
+## Linux
+
+
 
 # Port list usage
 Simply run the command `ct ports` to get the list of listening ports on your machine at http://localhost:1500.
@@ -51,6 +51,8 @@ It have to look like the following :
     run='mvn clean install jetty:run'
     dbg='mvnDebug clean install jetty:run'
     test='mvn test'
+    
+To init a project you can simply issue a `ct --init` in the folder where you want to create a new `.ctproject` file.
 
 Use it
 --
@@ -60,7 +62,14 @@ Protip
 --
 Use consistent aliases in your `.ctproject` files, this way, you can define global aliases for your shell that will allow you to use consistent shortcut regardless of the project type you're on.
 
-For example, you can add an alias `alias run="ct run"` and in each project define such a command. In your shell, a `run` will launch your project, no matter if the underlying task is a Maven or a Grunt one.
+For example, you can add an alias `alias run="./gradlew run"` and in each project define such a command. In your shell, a `run` will launch your project, no matter if the underlying task is a Maven or a Grunt one.
+
+# Man usage
+
+`ct` can extract content from README.md to provide a pseudo man-page for your project.
+
+You can use this feature by issuing `ct man` to view the README.md, 
+you can target a specific topic with `ct man <TOPIC>` and list available topics with `ct man --help` (or `ct man -h`). 
 
 License
 --
