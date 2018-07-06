@@ -26,8 +26,8 @@ Easy install
 
 ## Mac OS
  
- * brew tap && brew install tap
- 
+`brew install code-troopers/homebrew-tap/ct`
+
 ## Linux
 
 
