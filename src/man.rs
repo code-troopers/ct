@@ -30,6 +30,14 @@ impl CTMan{
         out
     }
 
+    pub fn help(ct_file: &CTFile){
+        if let Some(readme_content )= CTMan::all(ct_file){
+            println!("{}", "Found the following manual topics in README.md".blue());
+            readme_content.iter().map(|v| v.1)
+                .for_each(|v| println!("{}", v.title));
+        }
+    }
+
     pub fn print(&self){
         println!("{}", self.title.blue());
         println!("{}", self.content);

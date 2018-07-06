@@ -57,6 +57,7 @@ fn help(ct_file: &Option<CTFile>) -> String{
 fn run(ct_file: Option<CTFile>, config: Option<Config>) -> Result<(), String>{
     let args: Vec<App> = vec![SubCommand::with_name("man")
                                   .about("provide manual from content {{name}} of README.md 📖")
+                                  .arg(Arg::with_name("help").short("h").long("help").help("Lists available topics"))
                                   .arg(Arg::with_name("name").multiple(true).help("extract content")),
                               SubCommand::with_name("ports")
                                   .about("runs a server on http://localhost:1500 to see other used ports 👂")];
@@ -90,7 +91,7 @@ fn run(ct_file: Option<CTFile>, config: Option<Config>) -> Result<(), String>{
         if args.iter().map(|a| a.get_name().to_string()).filter(|c| c == &command.name).count() > 0{
             match command.name.as_ref() {
                 "ports" => start_port_listening(),
-                "man" => show_man(command.matches.value_of("name"), ct_file),
+                "man" => show_man(command.matches.value_of("name"), command.matches.is_present("help"), ct_file),
                 _ => debug_log(|| String::from("")),
             }
 
