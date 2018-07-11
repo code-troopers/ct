@@ -1,5 +1,8 @@
 extern crate linked_hash_map;
 extern crate regex;
+extern crate url;
+extern crate open;
+
 
 use cli::Config;
 use file_finder::CTFile;
@@ -7,6 +10,7 @@ use log::debug_log;
 use self::linked_hash_map::*;
 use self::regex::Regex;
 use std::process::*;
+use self::url::Url;
 
 #[derive(Debug)]
 pub struct RunCommand {
@@ -49,6 +53,14 @@ impl RunCommand{
     }
 
     pub fn run(&self, ct_file: &CTFile){
+        if let Ok(url) = Url::parse(&self.command){
+            if open::that(url.to_string()).is_ok(){
+                println!("🌍 Opened resource 🌎")
+            }else{
+                println!("🚧 Unable to open {:?}", url.to_string())
+            }
+            return
+        }
         let sh_sub_command = self.build_subcommand();
         debug_log(|| format!("About to run `sh -c {:?}`", sh_sub_command));
         let s : Child;
