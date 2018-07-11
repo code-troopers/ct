@@ -8,3 +8,5 @@ envvar='CTENV="azerty qsdf";echo $CTENV'
 # comment on line
 front='cd ui; ct run' #debugging #18
 dual="ct help && ct help"
+url="http://code-troopers.com"
+file="file:///tmp"

@@ -58,6 +58,14 @@ Use it
 --
 Simply call `ct` followed by your alias to launch the command in your current directory. If you execute the command without specifying a command, help screen with the available commands will be printed.
 
+Alias URIs
+--
+You can alias URIs straight away in your `.ctproject` to allow users to open it right away (for example a swagger entrypoint).
+
+    swagger="http://localhost:9000/swagger-ui/index.html" #opens swagger ui
+    target="file:///data" # open /data in your file explorer
+
+
 Protip
 --
 Use consistent aliases in your `.ctproject` files, this way, you can define global aliases for your shell that will allow you to use consistent shortcut regardless of the project type you're on.
