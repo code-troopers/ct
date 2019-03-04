@@ -7,6 +7,7 @@ extern crate colored;
 
 #[macro_use]
 extern crate serde_derive;
+extern crate itertools;
 
 
 use colored::*;
@@ -93,7 +94,7 @@ pub fn show_man(man_entry: Option<&str>, help: bool, ct_file: Option<CTFile>) {
                     man.print();
                 }
             } else {
-                ct_man.values().for_each(CTMan::print);
+                ct_man.values().for_each(|m| m.print());
             }
         }
     }
