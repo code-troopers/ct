@@ -11,16 +11,35 @@ use std::clone::Clone;
 use file_finder::CTFile;
 use std::thread::current;
 
-#[derive(Debug, Clone)]
+#[derive(PartialEq, Debug, Clone)]
 pub struct CTMan{
     title: String,
     content: String,
-    //subpart: Vec<CTMan>,
+    subpart: Vec<CTMan>,
     parent: Option<&'static CTMan>,
     level: i32
 }
 
 impl CTMan{
+
+    fn add_to_inner_sub_part(&mut self, next_element: CTMan) -> bool{
+        if let Some(element) = self.subpart.last_mut() {
+            return element.add_sub_part(next_element)
+        }
+
+        false
+    }
+
+    fn add_sub_part(&mut self, next_element: CTMan) -> bool{
+        if next_element.level == self.level + 1{
+            self.subpart.push(next_element.to_owned());
+            return true
+        }else{
+            self.add_to_inner_sub_part(next_element);
+        }
+        false
+    }
+
     pub fn all(ct_file: &CTFile) -> Option<LinkedHashMap<String, CTMan>>{
      /*   if let Ok(readme_content) = ct_file.get_readme_content() {
             return Some(CTMan::read_from_readme(readme_content))
@@ -39,15 +58,15 @@ impl CTMan{
         let mut level = 0;
         let mut should_search = false;
         let mut should_read = false;
-        let mut ct_man: Option<CTMan> = None;
+        let mut ct_man: Vec<CTMan> = Vec::new();
         for event in parser{
             match event{
                 Event::Start(tag) => {
                     match tag {
                         Tag::Header(lvl) => {
-                            if ct_man.is_some(){
+                            if !ct_man.is_empty(){
                                 if level > lvl {
-                                    return ct_man;
+                                    return ct_man.first().map(|man| man.to_owned());
                                 }
                             }
                             level = lvl;
@@ -60,19 +79,41 @@ impl CTMan{
                     should_search = false;
                 }
                 Event::Text(text) => {
-                    if should_search && text.to_lowercase() == key.to_lowercase(){
+                    if should_search && text.to_lowercase() == key.to_lowercase() {
                         should_read = true;
-                        ct_man = Some(CTMan { title: text.to_string(), content: "".to_string(), level, parent: None});
-                    }else if let Some(ref mut current_man)= ct_man{
-                        current_man.content += &text.to_string();
-                        current_man.content += "\n";
+                        ct_man.push(CTMan { title: text.to_string(), content: "".to_string(), level, parent: None, subpart: Vec::new() });
+                    }else{
+                        if should_read{
+                            if should_search{
+                                ct_man.push(CTMan { title: text.to_string(), content: "".to_string(), level, parent: None, subpart: Vec::new() });
+                            }else {
+                                ct_man.last_mut().map(|mut man| {
+                                    man.content += &text.to_string();
+                                    man.content += "\n";
+                                });
+                            }
+                        }
                     }
 
                 }
                 _ => ()
             }
         }
-        ct_man
+        //let mut out = vec![];
+        {
+            let mut to_remove: Vec<&CTMan> = vec![];
+            let mut iter = ct_man.iter_mut();
+            let mut skip_next = false;
+            while let Some(element) = iter.next() {
+                while let Some(next_element) = iter.next(){
+                    let next_man = next_element.to_owned();
+                    element.add_sub_part(next_man);
+                }
+            }
+        }
+        println!("{:#?}", &ct_man.clone());
+
+        ct_man.first().map(|m| m.to_owned())
     }
 
   /*  fn read_from_readme(readme_content: String) -> LinkedHashMap<String, CTMan>{
@@ -219,6 +260,9 @@ To run, do the classic dancing thing
 
 Dance dudes
 
+#### rock
+
+Rock paper cissor lizard spock
 ";
 
         let man = CTMan::find_from_readme(sample_readme.to_string(), "dev build and run");
