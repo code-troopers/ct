@@ -22,4 +22,4 @@ lazy_static = "1.0"
 clap = "2.0.0"
 url = "1.7.1"
 open = "1.2.1"
-pulldown-cmark = { version = "0.1.0", default-features = false }
+pulldown-cmark = { version = "0.6.0", default-features = false, features = ["simd"] }
