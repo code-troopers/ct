@@ -56,6 +56,7 @@ impl CTMan {
         CTMan::find_from_readme(readme_content, key)
     }
 
+    #[allow(clippy::while_let_on_iterator)]
     fn find_from_readme(readme_content: String, key: &str) -> Option<CTMan> {
         let parser = Parser::new(&readme_content);
         let mut level = 0;
@@ -83,11 +84,9 @@ impl CTMan {
                     } else if should_read_origin_level > 0 {
                         if should_search {
                             ct_man.push(CTMan { title: text.to_string(), content: "".to_string(), level, parent: None, subpart: Vec::new() });
-                        } else {
-                            ct_man.last_mut().map(|man| {
-                                man.content += &text.to_string();
-                                man.content += "\n";
-                            });
+                        } else if let Some(man) = ct_man.last_mut() {
+                            man.content += &text.to_string();
+                            man.content += "\n";
                         }
                     }
                 }
@@ -99,6 +98,7 @@ impl CTMan {
             let _to_remove: Vec<&CTMan> = vec![];
             let mut iter = ct_man.iter_mut();
             while let Some(element) = iter.next() {
+                // this double while triggers a clippy warning, need to be rewritten
                 while let Some(next_element) = iter.next() {
                     let next_man = next_element.to_owned();
                     element.add_sub_part(next_man);

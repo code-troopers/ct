@@ -30,6 +30,7 @@ pub mod log;
 pub mod banner;
 #[macro_use]
 pub mod ports_html;
+pub mod errors;
 
 
 use futures::future;
@@ -89,8 +90,8 @@ pub fn show_man(man_entry: Option<&str>, help: bool, ct_file: Option<CTFile>) {
             return
         }
         if let Some(ct_man) = CTMan::all(&ct_file) {
-            if man_entry.is_some() {
-                if let Some(man) = ct_man.get(man_entry.unwrap()) {
+            if let Some(man_entry_key) = man_entry {
+                if let Some(man) = ct_man.get(man_entry_key) {
                     man.print();
                 }
             } else {

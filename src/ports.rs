@@ -8,6 +8,7 @@ use self::regex::Regex;
 use std::process::Command;
 use std::process::Output;
 use std::process::Stdio;
+use crate::errors::CTErrors;
 
 
 #[derive(Serialize, Deserialize,Debug)]
@@ -29,7 +30,7 @@ impl CTPorts{
                       .spawn().is_ok()
     }
 
-    pub fn all() -> Result<Vec<CTPorts>, ()>{
+    pub fn all() -> Result<Vec<CTPorts>, CTErrors>{
         let lsof_output = CTPorts::run_lsof();
         let all_ports = CTPorts::all_from_lsof_output(String::from_utf8_lossy(&lsof_output.stdout).to_string());
         Ok(all_ports)
