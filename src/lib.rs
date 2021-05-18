@@ -1,4 +1,4 @@
-#![feature(plugin, extern_prelude)]
+#![feature(plugin)]
 extern crate futures;
 extern crate hyper;
 #[macro_use]
@@ -15,7 +15,7 @@ use file_finder::CTFile;
 use man::CTMan;
 use ports::CTPorts;
 use std::env;
-use std::error::Error;
+
 use std::fs::File;
 use std::io::Write;
 use std::path::Path;
@@ -58,14 +58,14 @@ pub fn init_project(){
     let mut file = match File::create(&path) {
         Err(why) => panic!("❌ couldn't create {}: {}",
                            display,
-                           why.description()),
+                           why.to_string()),
         Ok(file) => file,
     };
 
     match file.write_all("run='your run command'\nbuild='your build command'\ntest='your test command'".as_bytes()) {
         Err(why) => {
             panic!("❌ couldn't write to {}: {}", display,
-                   why.description())
+                   why.to_string())
         },
         Ok(_) => println!("{} successfully wrote to {}", "✔︎".green(), display),
     }
@@ -109,7 +109,7 @@ fn home_page() -> &'static str {
     INDEX_HTML!()
 }
 
-type BoxFut = Box<Future<Item = Response<Body>, Error = hyper::Error> + Send>;
+type BoxFut = Box<dyn Future<Item = Response<Body>, Error = hyper::Error> + Send>;
 
 fn echo(req: Request<Body>) -> BoxFut {
     let mut response = Response::new(Body::empty());

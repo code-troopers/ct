@@ -2,6 +2,7 @@
 name = "ct"
 version = "0.1.5"
 authors = ["Cedric Gatay <c.gatay@code-troopers.com>"]
+edition = "2018"
 
 [dependencies]
 regex = "0.2"

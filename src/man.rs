@@ -1,4 +1,3 @@
-#![feature(nll)]
 extern crate linked_hash_map;
 
 use self::linked_hash_map::*;
@@ -13,8 +12,8 @@ use self::pulldown_cmark::*;
 use std::*;
 use std::clone::Clone;
 
-use file_finder::CTFile;
-use std::thread::current;
+use crate::file_finder::CTFile;
+
 
 #[derive(PartialEq, Debug, Clone)]
 pub struct CTMan {
@@ -44,7 +43,7 @@ impl CTMan {
         false
     }
 
-    pub fn all(ct_file: &CTFile) -> Option<LinkedHashMap<String, CTMan>> {
+    pub fn all(_ct_file: &CTFile) -> Option<LinkedHashMap<String, CTMan>> {
         /*   if let Ok(readme_content) = ct_file.get_readme_content() {
                return Some(CTMan::read_from_readme(readme_content))
            }*/
@@ -64,17 +63,15 @@ impl CTMan {
         let mut should_read_origin_level = 0;
         let mut ct_man: Vec<CTMan> = Vec::new();
         for event in parser {
-                    // println!("{:#?}", event);
+            // println!("{:#?}", event);
             match event {
                 Event::Start(Tag::Heading(lvl)) => {
-                    if !ct_man.is_empty() {
-                        if level > lvl {
-                            return ct_man.first().map(|man| man.to_owned());
-                        }
+                    if !ct_man.is_empty() && level > lvl {
+                        return ct_man.first().map(|man| man.to_owned());
                     }
                     level = lvl;
                     should_search = true;
-                    if level <= should_read_origin_level{
+                    if level <= should_read_origin_level {
                         should_read_origin_level = 0
                     }
                 }
@@ -83,16 +80,14 @@ impl CTMan {
                     if should_search && text.to_lowercase() == key.to_lowercase() {
                         should_read_origin_level = level;
                         ct_man.push(CTMan { title: text.to_string(), content: "".to_string(), level, parent: None, subpart: Vec::new() });
-                    } else {
-                        if should_read_origin_level > 0 {
-                            if should_search {
-                                ct_man.push(CTMan { title: text.to_string(), content: "".to_string(), level, parent: None, subpart: Vec::new() });
-                            } else {
-                                ct_man.last_mut().map(|mut man| {
-                                    man.content += &text.to_string();
-                                    man.content += "\n";
-                                });
-                            }
+                    } else if should_read_origin_level > 0 {
+                        if should_search {
+                            ct_man.push(CTMan { title: text.to_string(), content: "".to_string(), level, parent: None, subpart: Vec::new() });
+                        } else {
+                            ct_man.last_mut().map(|man| {
+                                man.content += &text.to_string();
+                                man.content += "\n";
+                            });
                         }
                     }
                 }
@@ -101,7 +96,7 @@ impl CTMan {
         }
         //let mut out = vec![];
         {
-            let mut to_remove: Vec<&CTMan> = vec![];
+            let _to_remove: Vec<&CTMan> = vec![];
             let mut iter = ct_man.iter_mut();
             while let Some(element) = iter.next() {
                 while let Some(next_element) = iter.next() {
@@ -193,7 +188,7 @@ impl CTMan {
           out
       }
   */
-    pub fn help(ct_file: &CTFile) {
+    pub fn help(_ct_file: &CTFile) {
         /*     if let Some(readme_content )= CTMan::all(ct_file){
                  println!("{}", "Found the following manual topics in README.md".blue());
                  readme_content.iter().map(|v| v.1)
@@ -213,7 +208,7 @@ impl CTMan {
 mod tests {
     use super::*;
 
-    const sample_readme: &'static str = r"
+    const sample_readme: &str = r"
 # Project information
 
 lMassa

@@ -3,7 +3,7 @@ use std::io::Read;
 use std::env::current_dir;
 use std::path::PathBuf;
 use std::result::Result::Err;
-use log::debug_log;
+use crate::log::debug_log;
 
 const FILE_NAME: &str = ".ctproject";
 

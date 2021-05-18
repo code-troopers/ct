@@ -4,13 +4,13 @@ extern crate url;
 extern crate open;
 
 
-use cli::Config;
-use file_finder::CTFile;
-use log::debug_log;
 use self::linked_hash_map::*;
 use self::regex::Regex;
 use std::process::*;
 use self::url::Url;
+use crate::cli::Config;
+use crate::log::debug_log;
+use crate::file_finder::CTFile;
 
 #[derive(Debug)]
 pub struct RunCommand {
@@ -47,7 +47,7 @@ impl RunCommand{
             args_as_vect.append(config.as_ref().map(|c| c.args.clone()).unwrap_or(vec![]).as_mut());
             args_as_vect = args_as_vect.into_iter().filter(|a| { a.len() > 0 }).collect();
 
-            commands.insert(alias.to_string(), RunCommand{command: command.to_string(), args: args_as_vect, doc});;
+            commands.insert(alias.to_string(), RunCommand{command: command.to_string(), args: args_as_vect, doc});
         }
         commands
     }
@@ -148,9 +148,9 @@ mod tests{
         command3=push commits
         ", &None);
         assert_eq!(map.len(), 3);
-        assert_eq!(map.contains_key("command"), true);
-        assert_eq!(map.contains_key("command2"), true);
-        assert_eq!(map.contains_key("command3"), true);
+        assert!(map.contains_key("command"));
+        assert!(map.contains_key("command2"));
+        assert!(map.contains_key("command3"));
     }
 
     #[test]
