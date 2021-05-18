@@ -39,8 +39,9 @@ fn main() -> Result<(), String> {
 
 fn help(ct_file: &Option<CTFile>) -> String{
     let ports_available = CTPorts::available();
-    let mut help : Vec<String> = Vec::new();
-    help.push("Default commands :".green().to_string());
+    let mut help : Vec<String> = vec![
+    "Default commands :".green().to_string()
+    ];
     if ports_available {
         help.push(format!("\t• {} runs a server on http://localhost:1500 to see other used ports 👂", "ports".blue()));
     }

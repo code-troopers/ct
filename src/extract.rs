@@ -20,7 +20,7 @@ pub struct RunCommand {
 }
 
 impl RunCommand{
-    pub fn all<'a>(file_content: &'a str, config: &Option<Config>) -> LinkedHashMap<String, RunCommand>{
+    pub fn all(file_content: &str, config: &Option<Config>) -> LinkedHashMap<String, RunCommand> {
         let regex = Regex::new(r#"(?m)^\s*([^#=]*)=([^#\n]*)(#\s*(.*)\s*)?$"#).unwrap();
         let mut commands: LinkedHashMap<String, RunCommand> = LinkedHashMap::new();
         for capture in regex.captures_iter(file_content){
@@ -38,14 +38,14 @@ impl RunCommand{
             }
             debug_log(|| format!(" Cleaned command {}", command_with_args) );
 
-            let doc = capture.get(4).map(|m| m.as_str()).map(ToString::to_string).unwrap_or(String::from(""));
+            let doc = capture.get(4).map(|m| m.as_str()).map(ToString::to_string).unwrap_or_else(|| String::from(""));
             //this is probably useless since we're running it with sh -c (and probably invalid as first split might not match command if var are exported at beginning of line
-            let commands_vec: Vec<_> = command_with_args.split(" ").collect();
+            let commands_vec: Vec<_> = command_with_args.split(' ').collect();
             let (command, args) = commands_vec.split_first().unwrap();
 
             let mut args_as_vect: Vec<String> = args.iter().map(|s| s.to_string()).collect();
-            args_as_vect.append(config.as_ref().map(|c| c.args.clone()).unwrap_or(vec![]).as_mut());
-            args_as_vect = args_as_vect.into_iter().filter(|a| { a.len() > 0 }).collect();
+            args_as_vect.append(config.as_ref().map(|c| c.args.clone()).unwrap_or_default().as_mut());
+            args_as_vect = args_as_vect.into_iter().filter(|a| { !a.is_empty() }).collect();
 
             commands.insert(alias.to_string(), RunCommand{command: command.to_string(), args: args_as_vect, doc});
         }
@@ -84,10 +84,11 @@ impl RunCommand{
     }
 
     fn build_subcommand(&self) -> String {
-        let mut sh_sub_command = Vec::new();
-        sh_sub_command.push(self.command.to_string());
-        sh_sub_command.push(String::from(" "));
-        sh_sub_command.push(self.args.join(" ")); // no need to escape "', it is properly handled
+        let sh_sub_command = vec![
+            self.command.to_string(),
+            String::from(" "),
+            self.args.join(" "),  // no need to escape "', it is properly handled
+        ];
         sh_sub_command.join("")
     }
 }
@@ -157,7 +158,7 @@ mod tests{
     fn it_should_match_command_with_leading_spaces(){
         let map = RunCommand::all("   command=run tests", &None);
         assert_eq!(map.len(), 1);
-        assert_eq!(map.contains_key("command"), true);
+        assert!(map.contains_key("command"));
     }
 
     #[test]
@@ -175,14 +176,14 @@ mod tests{
     fn it_should_match_command_with_leading_tab(){
         let map = RunCommand::all("\tcommand=run tests", &None);
         assert_eq!(map.len(), 1);
-        assert_eq!(map.contains_key("command"), true);
+        assert!(map.contains_key("command"));
     }
 
     #[test]
     fn it_should_remove_surrounding_single_quotes(){
         let map = RunCommand::all("command='run tests'", &None);
         assert_eq!(map.len(), 1);
-        assert_eq!(map.contains_key("command"), true);
+        assert!(map.contains_key("command"));
         assert_eq!(map.get("command").unwrap().command, "run");
     }
 
@@ -190,7 +191,7 @@ mod tests{
     fn it_should_keep_quotes_on_exports(){
         let map = RunCommand::all(r#"command='VAR="toto tutu";run tests'"#, &None);
         assert_eq!(map.len(), 1);
-        assert_eq!(map.contains_key("command"), true);
+        assert!(map.contains_key("command"));
         assert_eq!(map.get("command").unwrap().build_subcommand(), r#"VAR="toto tutu";run tests"#);
     }
 

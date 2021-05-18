@@ -22,14 +22,11 @@ impl CTPorts{
 
     //result is not cached but it should not be invoked more than once per ct call, so this is not a big deal
     pub fn available() -> bool {
-        match Command::new("lsof")
+        Command::new("lsof")
                       .arg("-v")
                       .stdout(Stdio::null())
                       .stderr(Stdio::null())
-                      .spawn(){
-            Ok(_) => true,
-            Err(_) => false
-        }
+                      .spawn().is_ok()
     }
 
     pub fn all() -> Result<Vec<CTPorts>, ()>{
@@ -47,18 +44,18 @@ impl CTPorts{
     fn all_from_lsof_output(lsof_output: String) -> Vec<CTPorts>{
         //println!(">>> {:?}", lsof_output);
         let file_regex = Regex::new("^f[0-9]*$").unwrap();
-        let chunks: Vec<&str> = lsof_output.split("\np").collect();
-        let cleaned_chunks = chunks.into_iter()
+        let chunks = lsof_output.split("\np");
+        chunks.into_iter()
             .map(|s| {
-                s.split("\n").filter(|s| !file_regex.is_match(s)).collect::<Vec<&str>>()
+                s.split('\n').filter(|s| !file_regex.is_match(s)).collect::<Vec<&str>>()
             })
             .filter(|v| v.len() > 2 )
             .map(|vec| {
                 let pid = vec[0].replace("p", "").parse::<isize>().unwrap_or(0);
-                CTPorts { pid: pid,
+                CTPorts { pid,
                           name: vec[1][1..].to_string(),
                           listen: vec.split_at(2).1.to_vec().iter()
-                              .filter( |s| s.len() > 0)
+                              .filter( |s| !s.is_empty())
                               .map(|s| s[1..].to_string())
                               .unique()
                               .collect::<Vec<String>>(),
@@ -66,9 +63,8 @@ impl CTPorts{
                 }
             })
             .filter(|c| c.pid != 0)
-            .collect::<Vec<CTPorts>>();
+            .collect::<Vec<CTPorts>>()
         //println!("{:?}", cleaned_chunks);
-        cleaned_chunks
     }
 
     fn get_cwd_for_pid(pid: isize) -> Option<String>{
@@ -81,18 +77,18 @@ impl CTPorts{
 
     fn read_cwd_from_lsof_output(process_info: Option<String>) -> Option<String> {
         if let Some(pi) = process_info {
-            let process_info_chunks = pi.split("\n").collect::<Vec<&str>>();
+            let process_info_chunks = pi.split('\n').collect::<Vec<&str>>();
             let fcwd_index = process_info_chunks.iter().position(|s| s.starts_with("fcwd"));
             if let Some(index) = fcwd_index {
                 if process_info_chunks.len() > index {
                     let cwd_with_leading = process_info_chunks[index + 1];
-                    if cwd_with_leading.len() > 0 {
+                    if !cwd_with_leading.is_empty() {
                         return Some(cwd_with_leading[1..].to_string())
                     }
                 }
             }
         }
-        return None
+        None
     }
 }
 

@@ -35,7 +35,7 @@ impl CTMan {
 
     fn add_sub_part(&mut self, next_element: CTMan) -> bool {
         if next_element.level == self.level + 1 {
-            self.subpart.push(next_element.to_owned());
+            self.subpart.push(next_element);
             return true;
         } else {
             self.add_to_inner_sub_part(next_element);
@@ -105,7 +105,7 @@ impl CTMan {
                 }
             }
         }
-        println!(">>> {:#?}", &ct_man.clone());
+        println!(">>> {:#?}", &ct_man);
 
         ct_man.first().map(|m| m.to_owned())
     }
@@ -208,7 +208,7 @@ impl CTMan {
 mod tests {
     use super::*;
 
-    const sample_readme: &str = r"
+    const SAMPLE_README: &str = r"
 # Project information
 
 lMassa
@@ -271,10 +271,10 @@ With chat there is noise
 
     #[test]
     fn test_read_from_readme() {
-        let man = CTMan::find_from_readme(sample_readme.to_string(), "dev build and run");
+        let man = CTMan::find_from_readme(SAMPLE_README.to_string(), "dev build and run");
         assert!(man.is_some());
         println!("++++ {:#?}", man.unwrap());
-        /* let mans = CTMan::read_from_readme(sample_readme.to_string());
+        /* let mans = CTMan::read_from_readme(SAMPLE_README.to_string());
          println!("{:?}", mans.get("dev build and run"));
         // println!("------ \n {:?}", mans);
          assert_eq!(mans.keys().len(), 6);
@@ -284,10 +284,10 @@ With chat there is noise
 
     #[test]
     fn test_read_from_readme_build() {
-        let man = CTMan::find_from_readme(sample_readme.to_string(), "links");
+        let man = CTMan::find_from_readme(SAMPLE_README.to_string(), "links");
         assert!(man.is_some());
         println!("++++ {:#?}", man.unwrap());
-        /* let mans = CTMan::read_from_readme(sample_readme.to_string());
+        /* let mans = CTMan::read_from_readme(SAMPLE_README.to_string());
          println!("{:?}", mans.get("dev build and run"));
         // println!("------ \n {:?}", mans);
          assert_eq!(mans.keys().len(), 6);

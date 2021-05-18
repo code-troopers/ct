@@ -40,7 +40,7 @@ use hyper::header::CONTENT_TYPE;
 
 
 pub fn show_banner(){
-    let show_banner = env::var("CTNOBANNER").unwrap_or("false".to_string());
+    let show_banner = env::var("CTNOBANNER").unwrap_or_else(|_|"false".to_string());
     if show_banner == "false" {
         println!("{}", BANNER!());
     }
