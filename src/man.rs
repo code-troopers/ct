@@ -13,7 +13,6 @@ use std::*;
 use std::clone::Clone;
 
 use crate::file_finder::CTFile;
-use std::borrow::Borrow;
 
 
 #[derive(PartialEq, Debug, Clone)]
@@ -75,27 +74,25 @@ impl CTMan {
 
     pub fn find(ct_file: &CTFile, key: &str) -> Option<CTMan> {
         let readme_content = ct_file.get_readme_content().unwrap();
-        CTMan::find_from_readme(readme_content, Some(key))
+        CTMan::find_from_readme(readme_content, Some(key)).first().map(|m| m.to_owned())
     }
 
-    fn find_from_readme(readme_content: String, key: Option<&str>) -> Option<CTMan> {
+    fn find_from_readme(readme_content: String, key: Option<&str>) -> Vec<CTMan> {
         let parser = Parser::new(&readme_content);
         let mut level = 0;
         let mut should_search = false;
         let mut should_read_origin_level = 0;
         let mut ct_man: Vec<CTMan> = Vec::new();
-        //let mut current_man: Option<&mut CTMan> = None;
         let mut man: Option<CTMan> = None;
         for event in parser {
-            // println!("{:#?}", event);
             match event {
                 Event::Start(Tag::Heading(lvl)) => {
                     if !ct_man.is_empty() && level > lvl && key != None {
                         println!("£££ {:#?}", ct_man);
-                        return ct_man.first().map(|man| man.to_owned());
+                        return ct_man;
                     }
                     if let Some(ref man) = man {
-                        CTMan::build_or_append_man_entry(level, &should_search, &mut ct_man, man.clone());
+                        CTMan::build_or_append_man_entry(level, &mut ct_man, man.clone());
                     }
                     level = lvl;
                     should_search = true;
@@ -105,7 +102,7 @@ impl CTMan {
                 }
                 Event::End(Tag::Heading(_lvl)) => {
                     should_search = false
-                },
+                }
                 Event::Text(text) => {
                     if !should_search {
                         if let Some(ref mut man) = man {
@@ -114,130 +111,49 @@ impl CTMan {
                         }
                     } else {
                         let current_man = CTMan { title: text.to_string(), content: "".to_string(), level, parent: None, subpart: Vec::new() };
-                        //current_man = Some(&mut man);
 
                         match key {
                             Some(key) =>
                                 if should_search && text.to_lowercase() == key.to_lowercase() {
                                     should_read_origin_level = level;
                                     man = Some(current_man);
-                                    //ct_man.push(current_man);
                                 } else if should_read_origin_level > 0 {
-                                    //man = Some(current_man);
                                     man = Some(current_man);
                                 },
                             None => {
-                                if should_read_origin_level > 0 {
-                                    man = Some(current_man);
-                                    //man = Some(current_man);
-                                } else {
+                                man = Some(current_man);
+                                if should_read_origin_level <= 0 {
                                     should_read_origin_level = level;
-                                    man = Some(current_man);
-                                    //ct_man.push(current_man);
+                                    //man = Some(current_man);
                                 }
                             }
                         }
-
                     }
                 }
                 _ => ()
             }
         }
         if let Some(ref man) = man {
-            CTMan::build_or_append_man_entry(level, &should_search, &mut ct_man, man.clone());
+            CTMan::build_or_append_man_entry(level, &mut ct_man, man.clone());
         }
 
         println!(">>> {:#?}", &ct_man);
 
-        ct_man.first().map(|m| m.to_owned())
+        ct_man
     }
 
-    fn build_or_append_man_entry(level: u32, should_search: &bool, ct_man: &mut Vec<CTMan>, new_man: CTMan){
-        if let Some(first) = ct_man.iter_mut().filter_map(|man| man.find_sub_part(level)).collect::<Vec<_>>().last_mut() {
+    fn build_or_append_man_entry(level: u32, ct_man: &mut Vec<CTMan>, new_man: CTMan) {
+        if let Some(first) = ct_man
+            .iter_mut()
+            .filter_map(|man| man.find_sub_part(level))
+            .collect::<Vec<_>>()
+            .last_mut() {
             first.add_sub_part(new_man);
         } else {
             ct_man.push(new_man);
         }
     }
 
-    /*  fn read_from_readme(readme_content: String) -> LinkedHashMap<String, CTMan>{
-          let mut out: LinkedHashMap<String,CTMan> = LinkedHashMap::new();
-          let parser = Parser::new(&readme_content);
-          let mut level = 0;
-          let mut man_parts: Vec<CTMan> = Vec::new();
-          let mut is_header = false;
-          let mut current_man: Option<&'static CTMan> = None;
-
-          for event in parser {
-              match event {
-                  Event::Start(tag) => {
-                      match tag {
-                          Tag::Header(lvl) => {
-                              if lvl == 1 {
-                                  let ct_man = CTMan { title: "".to_string(), content: "".to_string(), parent: None, level: lvl };
-                                  man_parts.push(ct_man);
-                                  current_man = man_parts.last();
-
-  //                                    current_man = man_parts.last();
-                              } else if level > lvl {
-                                  //current_man = man_parts.last();
-                              }
-                              level = lvl;
-                              is_header = true;
-                          },
-                          _ => ()
-                      }
-                  },
-                  Event::End(tag) => {
-                      match tag {
-                          Tag::Header(lvl) => {
-                              level = lvl;
-
-                              is_header = false;
-                          },
-                          _ => ()
-                      }
-                  },
-                  Event::Text(text) => {
-
-                        if let Some(ref mut current) = man_parts.last_mut() {
-                      /*current_man.map( |current| {*/
-                      if is_header {
-                          if level > current.level {
-                              let man = CTMan { title: text.to_string(), content: "".to_string(), parent: current_man, level };
-                              current_man = Some(&man);
-
-                              //current.subpart.push(man.to_owned());
-                          } else if level == current.level {
-                              current.title = text.to_string();
-                          }
-                      } else {
-                          current.content += &text.to_string();
-                      }
-                  }
-                  /*);*/
-                    //  ()
-                      // }
-                  },
-                  _ => ()
-              }
-          }
-
-       /*   let allParts:Vec<&CTMan> = man_parts.iter().flat_map(|m| {
-              let mut vec = Vec::new();
-              vec.push(m);
-              vec.extend(m.subpart.iter());
-              return vec
-          }).collect();
-  */
-          println!("| {:?}", man_parts);
-        /*  allParts.into_iter().for_each( |a| {
-              let clone = a.clone();
-              let _ = out.insert(clone.title.to_lowercase().to_string(), clone);
-          });*/
-          out
-      }
-  */
     pub fn help(_ct_file: &CTFile) {
         /*     if let Some(readme_content )= CTMan::all(ct_file){
                  println!("{}", "Found the following manual topics in README.md".blue());
@@ -321,7 +237,7 @@ With chat there is noise
 
     #[test]
     fn test_read_from_readme() {
-        let man = CTMan::find_from_readme(SAMPLE_README.to_string(), Option::from("dev build and run"));
+        let man = CTMan::find_from_readme(SAMPLE_README.to_string(), Option::from("dev build and run")).first().map(|e| e.to_owned());
         assert!(man.is_some());
         println!("++++ {:#?}", man.unwrap());
         /* let mans = CTMan::read_from_readme(SAMPLE_README.to_string());
@@ -334,7 +250,7 @@ With chat there is noise
 
     #[test]
     fn test_read_from_readme_find_empty() {
-        let man = CTMan::find_from_readme(SAMPLE_README.to_string(), None);
+        let man = CTMan::find_from_readme(SAMPLE_README.to_string(), None).first().map(|e| e.to_owned());
         assert!(man.is_some());
         println!("++++ {:#?}", man.unwrap());
         /* let mans = CTMan::read_from_readme(SAMPLE_README.to_string());
@@ -347,7 +263,7 @@ With chat there is noise
 
     #[test]
     fn test_read_from_readme_links() {
-        let man = CTMan::find_from_readme(SAMPLE_README.to_string(), Option::from("links"));
+        let man = CTMan::find_from_readme(SAMPLE_README.to_string(), Option::from("links")).first().map(|e| e.to_owned());
         assert!(man.is_some());
         let man = man.unwrap();
         //println!("++++ {:#?}", &man);
@@ -357,7 +273,7 @@ With chat there is noise
 
     #[test]
     fn test_read_from_readme_run() {
-        let man = CTMan::find_from_readme(SAMPLE_README.to_string(), Option::from("run"));
+        let man = CTMan::find_from_readme(SAMPLE_README.to_string(), Option::from("run")).first().map(|e| e.to_owned());
         assert!(man.is_some());
         let man = man.unwrap();
         //println!("++++ {:#?}", &man);
@@ -388,7 +304,7 @@ Content second subsection
 
     #[test]
     fn test_read_from_short_readme_find_empty() {
-        let man = CTMan::find_from_readme(SHORT_README.to_string(), None);
+        let man = CTMan::find_from_readme(SHORT_README.to_string(), None).first().map(|e| e.to_owned());
         assert!(man.is_some());
         println!("++++ {:#?}", man.unwrap());
         /* let mans = CTMan::read_from_readme(SAMPLE_README.to_string());
