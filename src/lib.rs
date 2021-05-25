@@ -91,7 +91,7 @@ pub fn show_man(man_entry: Option<&str>, help: bool, ct_file: Option<CTFile>) {
         }
         if let Some(ct_man) = CTMan::all(&ct_file) {
             if let Some(man_entry_key) = man_entry {
-                if let Some(man) = ct_man.get(man_entry_key) {
+                if let Some(man) = ct_man.get(&man_entry_key.to_lowercase()) {
                     man.print();
                 }
             } else {

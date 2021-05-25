@@ -64,11 +64,18 @@ impl CTMan {
         None
     }
 
-    pub fn all(_ct_file: &CTFile) -> Option<LinkedHashMap<String, CTMan>> {
-        /*   if let Ok(readme_content) = ct_file.get_readme_content() {
-               return Some(CTMan::read_from_readme(readme_content))
-           }*/
-        None
+    pub fn all(ct_file: &CTFile) -> Option<LinkedHashMap<String, CTMan>> {
+        if let Ok(readme_content) = ct_file.get_readme_content() {
+            let mut out = LinkedHashMap::new();
+            CTMan::find_from_readme(readme_content, None).into_iter()
+                .for_each(|m| {
+                    let title = m.title.clone().to_lowercase();
+                    out.insert(title,  m);
+                });
+            Some(out)
+        } else {
+            None
+        }
     }
 
 
@@ -88,7 +95,7 @@ impl CTMan {
             match event {
                 Event::Start(Tag::Heading(lvl)) => {
                     if !ct_man.is_empty() && level > lvl && key != None {
-                        println!("£££ {:#?}", ct_man);
+                        //println!("£££ {:#?}", ct_man);
                         return ct_man;
                     }
                     if let Some(ref man) = man {
@@ -103,7 +110,8 @@ impl CTMan {
                 Event::End(Tag::Heading(_lvl)) => {
                     should_search = false
                 }
-                Event::Text(text) => {
+                Event::Text(txt) | Event::Code(txt) => {
+                    let text = &txt.into_string();
                     if !should_search {
                         if let Some(ref mut man) = man {
                             man.content += &text.to_string();
@@ -137,7 +145,7 @@ impl CTMan {
             CTMan::build_or_append_man_entry(level, &mut ct_man, man.clone());
         }
 
-        println!(">>> {:#?}", &ct_man);
+        //println!(">>> {:#?}", &ct_man);
 
         ct_man
     }
@@ -154,12 +162,12 @@ impl CTMan {
         }
     }
 
-    pub fn help(_ct_file: &CTFile) {
-        /*     if let Some(readme_content )= CTMan::all(ct_file){
-                 println!("{}", "Found the following manual topics in README.md".blue());
-                 readme_content.iter().map(|v| v.1)
-                     .for_each(|v| println!("{}", v.title));
-             }*/
+    pub fn help(ct_file: &CTFile) {
+        if let Some(readme_content) = CTMan::all(ct_file) {
+            println!("{}", "Found the following manual topics in README.md".blue());
+            readme_content.iter().map(|v| v.1)
+                .for_each(|v| println!("{}", v.title));
+        }
     }
 
 
