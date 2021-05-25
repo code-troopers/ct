@@ -13,6 +13,7 @@ use std::*;
 use std::clone::Clone;
 
 use crate::file_finder::CTFile;
+use std::borrow::Borrow;
 
 
 #[derive(PartialEq, Debug, Clone)]
@@ -43,22 +44,22 @@ impl CTMan {
         false
     }
 
-    fn find_sub_part(&mut self, with_level: u32) -> Option<&mut CTMan>{
+    fn find_sub_part(&mut self, with_level: u32) -> Option<&mut CTMan> {
         if self.subpart.is_empty() {
             if self.level == with_level - 1 {
-                return Some(self)
+                return Some(self);
             }
-            return None
+            return None;
         }
         if let Some(man) = self.subpart.last() {
             if man.level == with_level {
-                return Some(self)
+                return Some(self);
             }
         }
         //need to split as we need to borrow mutably here only
         if let Some(man) = self.subpart.last_mut() {
             if man.level < with_level {
-                return man.find_sub_part(with_level)
+                return man.find_sub_part(with_level);
             }
         }
         None
@@ -83,6 +84,8 @@ impl CTMan {
         let mut should_search = false;
         let mut should_read_origin_level = 0;
         let mut ct_man: Vec<CTMan> = Vec::new();
+        //let mut current_man: Option<&mut CTMan> = None;
+        let mut man: Option<CTMan> = None;
         for event in parser {
             // println!("{:#?}", event);
             match event {
@@ -91,34 +94,57 @@ impl CTMan {
                         println!("£££ {:#?}", ct_man);
                         return ct_man.first().map(|man| man.to_owned());
                     }
+                    if let Some(ref man) = man {
+                        CTMan::build_or_append_man_entry(level, &should_search, &mut ct_man, man.clone());
+                    }
                     level = lvl;
                     should_search = true;
                     if level <= should_read_origin_level {
                         should_read_origin_level = 0
                     }
                 }
-                Event::End(Tag::Heading(_lvl)) => should_search = false,
+                Event::End(Tag::Heading(_lvl)) => {
+                    should_search = false
+                },
                 Event::Text(text) => {
-                    match key {
-                        Some(key) =>
-                            if should_search && text.to_lowercase() == key.to_lowercase() {
-                                should_read_origin_level = level;
-                                ct_man.push(CTMan { title: text.to_string(), content: "".to_string(), level, parent: None, subpart: Vec::new() });
-                            } else if should_read_origin_level > 0 {
-                                CTMan::build_or_append_man_entry(level, &should_search, &mut ct_man, &text);
-                            },
-                        None => {
-                            if should_read_origin_level > 0 {
-                                CTMan::build_or_append_man_entry(level, &should_search, &mut ct_man, &text);
-                            } else {
-                                should_read_origin_level = level;
-                                ct_man.push(CTMan { title: text.to_string(), content: "".to_string(), level, parent: None, subpart: Vec::new() });
+                    if !should_search {
+                        if let Some(ref mut man) = man {
+                            man.content += &text.to_string();
+                            man.content += "\n";
+                        }
+                    } else {
+                        let current_man = CTMan { title: text.to_string(), content: "".to_string(), level, parent: None, subpart: Vec::new() };
+                        //current_man = Some(&mut man);
+
+                        match key {
+                            Some(key) =>
+                                if should_search && text.to_lowercase() == key.to_lowercase() {
+                                    should_read_origin_level = level;
+                                    man = Some(current_man);
+                                    //ct_man.push(current_man);
+                                } else if should_read_origin_level > 0 {
+                                    //man = Some(current_man);
+                                    man = Some(current_man);
+                                },
+                            None => {
+                                if should_read_origin_level > 0 {
+                                    man = Some(current_man);
+                                    //man = Some(current_man);
+                                } else {
+                                    should_read_origin_level = level;
+                                    man = Some(current_man);
+                                    //ct_man.push(current_man);
+                                }
                             }
                         }
+
                     }
                 }
                 _ => ()
             }
+        }
+        if let Some(ref man) = man {
+            CTMan::build_or_append_man_entry(level, &should_search, &mut ct_man, man.clone());
         }
 
         println!(">>> {:#?}", &ct_man);
@@ -126,16 +152,11 @@ impl CTMan {
         ct_man.first().map(|m| m.to_owned())
     }
 
-    fn build_or_append_man_entry(level: u32, should_search: &bool, ct_man: &mut Vec<CTMan>, text: &CowStr) {
-        if *should_search {
-            if let Some(first) = ct_man.iter_mut().filter_map(|man| man.find_sub_part(level)).collect::<Vec<_>>().last_mut(){
-                first.add_sub_part(CTMan { title: text.to_string(), content: "".to_string(), level, parent: None, subpart: Vec::new() });
-            }else {
-                ct_man.push(CTMan { title: text.to_string(), content: "".to_string(), level, parent: None, subpart: Vec::new() });
-            }
-        } else if let Some(man) = ct_man.last_mut() {
-            man.content += &text.to_string();
-            man.content += "\n";
+    fn build_or_append_man_entry(level: u32, should_search: &bool, ct_man: &mut Vec<CTMan>, new_man: CTMan){
+        if let Some(first) = ct_man.iter_mut().filter_map(|man| man.find_sub_part(level)).collect::<Vec<_>>().last_mut() {
+            first.add_sub_part(new_man);
+        } else {
+            ct_man.push(new_man);
         }
     }
 
@@ -342,6 +363,9 @@ With chat there is noise
         //println!("++++ {:#?}", &man);
         assert_eq!(&man.title, "run");
         assert!(!&man.subpart.is_empty());
+        assert_eq!(&man.subpart.len(), &1);
+        assert_eq!(&man.subpart[0].content, "Dance dudes\n");
+        assert_eq!(&man.subpart[0].subpart.len(), &2);
     }
 
     const SHORT_README: &str = r"
