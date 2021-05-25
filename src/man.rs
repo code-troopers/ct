@@ -43,6 +43,27 @@ impl CTMan {
         false
     }
 
+    fn find_sub_part(&mut self, with_level: u32) -> Option<&mut CTMan>{
+        if self.subpart.is_empty() {
+            if self.level == with_level - 1 {
+                return Some(self)
+            }
+            return None
+        }
+        if let Some(man) = self.subpart.last() {
+            if man.level == with_level {
+                return Some(self)
+            }
+        }
+        //need to split as we need to borrow mutably here only
+        if let Some(man) = self.subpart.last_mut() {
+            if man.level < with_level {
+                return man.find_sub_part(with_level)
+            }
+        }
+        None
+    }
+
     pub fn all(_ct_file: &CTFile) -> Option<LinkedHashMap<String, CTMan>> {
         /*   if let Ok(readme_content) = ct_file.get_readme_content() {
                return Some(CTMan::read_from_readme(readme_content))
@@ -53,11 +74,10 @@ impl CTMan {
 
     pub fn find(ct_file: &CTFile, key: &str) -> Option<CTMan> {
         let readme_content = ct_file.get_readme_content().unwrap();
-        CTMan::find_from_readme(readme_content, key)
+        CTMan::find_from_readme(readme_content, Some(key))
     }
 
-    #[allow(clippy::while_let_on_iterator)]
-    fn find_from_readme(readme_content: String, key: &str) -> Option<CTMan> {
+    fn find_from_readme(readme_content: String, key: Option<&str>) -> Option<CTMan> {
         let parser = Parser::new(&readme_content);
         let mut level = 0;
         let mut should_search = false;
@@ -67,7 +87,8 @@ impl CTMan {
             // println!("{:#?}", event);
             match event {
                 Event::Start(Tag::Heading(lvl)) => {
-                    if !ct_man.is_empty() && level > lvl {
+                    if !ct_man.is_empty() && level > lvl && key != None {
+                        println!("£££ {:#?}", ct_man);
                         return ct_man.first().map(|man| man.to_owned());
                     }
                     level = lvl;
@@ -78,36 +99,44 @@ impl CTMan {
                 }
                 Event::End(Tag::Heading(_lvl)) => should_search = false,
                 Event::Text(text) => {
-                    if should_search && text.to_lowercase() == key.to_lowercase() {
-                        should_read_origin_level = level;
-                        ct_man.push(CTMan { title: text.to_string(), content: "".to_string(), level, parent: None, subpart: Vec::new() });
-                    } else if should_read_origin_level > 0 {
-                        if should_search {
-                            ct_man.push(CTMan { title: text.to_string(), content: "".to_string(), level, parent: None, subpart: Vec::new() });
-                        } else if let Some(man) = ct_man.last_mut() {
-                            man.content += &text.to_string();
-                            man.content += "\n";
+                    match key {
+                        Some(key) =>
+                            if should_search && text.to_lowercase() == key.to_lowercase() {
+                                should_read_origin_level = level;
+                                ct_man.push(CTMan { title: text.to_string(), content: "".to_string(), level, parent: None, subpart: Vec::new() });
+                            } else if should_read_origin_level > 0 {
+                                CTMan::build_or_append_man_entry(level, &should_search, &mut ct_man, &text);
+                            },
+                        None => {
+                            if should_read_origin_level > 0 {
+                                CTMan::build_or_append_man_entry(level, &should_search, &mut ct_man, &text);
+                            } else {
+                                should_read_origin_level = level;
+                                ct_man.push(CTMan { title: text.to_string(), content: "".to_string(), level, parent: None, subpart: Vec::new() });
+                            }
                         }
                     }
                 }
                 _ => ()
             }
         }
-        //let mut out = vec![];
-        {
-            let _to_remove: Vec<&CTMan> = vec![];
-            let mut iter = ct_man.iter_mut();
-            while let Some(element) = iter.next() {
-                // this double while triggers a clippy warning, need to be rewritten
-                while let Some(next_element) = iter.next() {
-                    let next_man = next_element.to_owned();
-                    element.add_sub_part(next_man);
-                }
-            }
-        }
+
         println!(">>> {:#?}", &ct_man);
 
         ct_man.first().map(|m| m.to_owned())
+    }
+
+    fn build_or_append_man_entry(level: u32, should_search: &bool, ct_man: &mut Vec<CTMan>, text: &CowStr) {
+        if *should_search {
+            if let Some(first) = ct_man.iter_mut().filter_map(|man| man.find_sub_part(level)).collect::<Vec<_>>().last_mut(){
+                first.add_sub_part(CTMan { title: text.to_string(), content: "".to_string(), level, parent: None, subpart: Vec::new() });
+            }else {
+                ct_man.push(CTMan { title: text.to_string(), content: "".to_string(), level, parent: None, subpart: Vec::new() });
+            }
+        } else if let Some(man) = ct_man.last_mut() {
+            man.content += &text.to_string();
+            man.content += "\n";
+        }
     }
 
     /*  fn read_from_readme(readme_content: String) -> LinkedHashMap<String, CTMan>{
@@ -271,7 +300,7 @@ With chat there is noise
 
     #[test]
     fn test_read_from_readme() {
-        let man = CTMan::find_from_readme(SAMPLE_README.to_string(), "dev build and run");
+        let man = CTMan::find_from_readme(SAMPLE_README.to_string(), Option::from("dev build and run"));
         assert!(man.is_some());
         println!("++++ {:#?}", man.unwrap());
         /* let mans = CTMan::read_from_readme(SAMPLE_README.to_string());
@@ -283,8 +312,59 @@ With chat there is noise
     }
 
     #[test]
-    fn test_read_from_readme_build() {
-        let man = CTMan::find_from_readme(SAMPLE_README.to_string(), "links");
+    fn test_read_from_readme_find_empty() {
+        let man = CTMan::find_from_readme(SAMPLE_README.to_string(), None);
+        assert!(man.is_some());
+        println!("++++ {:#?}", man.unwrap());
+        /* let mans = CTMan::read_from_readme(SAMPLE_README.to_string());
+         println!("{:?}", mans.get("dev build and run"));
+        // println!("------ \n {:?}", mans);
+         assert_eq!(mans.keys().len(), 6);
+         assert!(mans.contains_key("links"));
+         assert!(mans.contains_key("build"));*/
+    }
+
+    #[test]
+    fn test_read_from_readme_links() {
+        let man = CTMan::find_from_readme(SAMPLE_README.to_string(), Option::from("links"));
+        assert!(man.is_some());
+        let man = man.unwrap();
+        //println!("++++ {:#?}", &man);
+        assert_eq!(&man.title, "Links");
+        assert!(&man.subpart.is_empty());
+    }
+
+    #[test]
+    fn test_read_from_readme_run() {
+        let man = CTMan::find_from_readme(SAMPLE_README.to_string(), Option::from("run"));
+        assert!(man.is_some());
+        let man = man.unwrap();
+        //println!("++++ {:#?}", &man);
+        assert_eq!(&man.title, "run");
+        assert!(!&man.subpart.is_empty());
+    }
+
+    const SHORT_README: &str = r"
+# first title
+
+Content
+
+## first subsection
+
+Content subsection
+
+# second title
+
+Content second title
+
+## second subsection
+
+Content second subsection
+    ";
+
+    #[test]
+    fn test_read_from_short_readme_find_empty() {
+        let man = CTMan::find_from_readme(SHORT_README.to_string(), None);
         assert!(man.is_some());
         println!("++++ {:#?}", man.unwrap());
         /* let mans = CTMan::read_from_readme(SAMPLE_README.to_string());
